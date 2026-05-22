@@ -173,6 +173,17 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
 .btn-formula { background: #2a3a6a; color: var(--text); border: 1px solid var(--border); }
 .btn-formula:hover { background: var(--card); border-color: var(--accent2); }
 .btn-formula.active { border-color: var(--accent2); color: var(--accent2); }
+#speed-wrap { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+#speed-wrap label { font-size: 11px; color: var(--text-muted); }
+#speed-wrap .speed-row { display: flex; align-items: center; gap: 6px; }
+.btn-speed {
+  background: #2a3a6a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+}
+.btn-speed:hover { background: var(--card); border-color: var(--accent2); }
+.btn-speed.active { border-color: var(--accent2); color: var(--accent2); }
 
 /* ══════════════════════════════════════════════════
    計算式ビュー（#main内）
@@ -506,6 +517,15 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
         <button class="btn btn-formula" id="btn-formula">計算式</button>
       </div>
     </div>
+
+    <div id="speed-wrap">
+      <label>🎞 フレーム速度</label>
+      <div class="speed-row">
+        <button class="btn btn-speed js-anim-speed-btn" data-anim-ms="67" title="約15fps">速い</button>
+        <button class="btn btn-speed js-anim-speed-btn" data-anim-ms="100" title="10fps">標準</button>
+        <button class="btn btn-speed js-anim-speed-btn" data-anim-ms="125" title="8fps">ゆっくり</button>
+      </div>
+    </div>
   </header>
 
   <!-- ── サイドバー ── -->
@@ -688,7 +708,8 @@ const DEFAULT_IMAGE_MODE = 'effect_id_minus_201';
 let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
-const MONSTER_IMG_ANIM_INTERVAL_MS = 300;
+const DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS = 100;
+let monsterImgAnimIntervalMs = DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS;
 let activeMonsterImgTimer = null;
 let activeMonsterImgEl = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
@@ -809,6 +830,7 @@ function init() {
     setupSearch();
     setupLvControl();
     setupImageControl();
+    setupPlaybackSpeedControls();
     setupFormulaPanel();
     document.getElementById('loading').classList.add('hidden');
   } catch(e) {
@@ -984,6 +1006,37 @@ function setupImageControl() {
   currentImageMode = DEFAULT_IMAGE_MODE;
 }
 
+function setupPlaybackSpeedControls() {
+  const buttons = Array.from(document.querySelectorAll('.js-anim-speed-btn'));
+  if (buttons.length === 0) return;
+
+  const applySpeed = (ms) => {
+    if (!Number.isFinite(ms) || ms <= 0) return;
+    monsterImgAnimIntervalMs = ms;
+    buttons.forEach((btn) => {
+      const v = parseInt(btn.dataset.animMs || '0', 10);
+      btn.classList.toggle('active', v === monsterImgAnimIntervalMs);
+    });
+    const speedText = `再生速度: ${formatPlaybackSpeedText()}`;
+    document.querySelectorAll('.js-speed-tag').forEach((el) => {
+      el.textContent = speedText;
+    });
+    if (activeMonsterImgTimer && activeMonsterImgEl) {
+      clearInterval(activeMonsterImgTimer);
+      scheduleMonsterImgAnimation(activeMonsterImgEl);
+    }
+  };
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const ms = parseInt(btn.dataset.animMs || '0', 10);
+      applySpeed(ms);
+    });
+  });
+
+  applySpeed(DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS);
+}
+
 function sadToPngName(sadName) {
   if (!sadName) return null;
   return sadName.replace(/\.sad$/i, '.png');
@@ -1108,9 +1161,20 @@ function setMonsterImgPlayTag(imgEl, isPlaying) {
 }
 
 function formatPlaybackSpeedText() {
-  const sec = (MONSTER_IMG_ANIM_INTERVAL_MS / 1000).toFixed(2);
-  const fps = (1000 / MONSTER_IMG_ANIM_INTERVAL_MS).toFixed(1);
+  const sec = (monsterImgAnimIntervalMs / 1000).toFixed(2);
+  const fps = (1000 / monsterImgAnimIntervalMs).toFixed(1);
   return `${sec}秒/コマ (${fps}fps)`;
+}
+
+function scheduleMonsterImgAnimation(imgEl) {
+  activeMonsterImgTimer = setInterval(() => {
+    if (!document.body.contains(imgEl)) {
+      stopMonsterImgAnimation(imgEl);
+      return;
+    }
+    const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
+    applyMonsterImgVariant(imgEl, cur + 1);
+  }, monsterImgAnimIntervalMs);
 }
 
 function stopMonsterImgAnimation(imgEl = null) {
@@ -1141,15 +1205,7 @@ function startMonsterImgAnimation(imgEl) {
   activeMonsterImgEl = imgEl;
   imgEl.dataset.animating = '1';
   setMonsterImgPlayTag(imgEl, true);
-
-  activeMonsterImgTimer = setInterval(() => {
-    if (!document.body.contains(imgEl)) {
-      stopMonsterImgAnimation(imgEl);
-      return;
-    }
-    const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
-    applyMonsterImgVariant(imgEl, cur + 1);
-  }, MONSTER_IMG_ANIM_INTERVAL_MS);
+  scheduleMonsterImgAnimation(imgEl);
 }
 
 function toggleMonsterImgAnimation(imgEl) {
