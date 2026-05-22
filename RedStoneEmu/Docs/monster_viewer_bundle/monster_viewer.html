@@ -923,7 +923,7 @@ function setupImageControl() {
   const savedMode = localStorage.getItem('monsterViewerImageMode');
   const allModes = Array.from(modeEl.options).map(o => o.value);
 
-  if (savedMode && allModes.includes(savedMode)) {
+  if (savedMode && allModes.includes(savedMode) && countImageCandidatesByMode(savedMode) > 0) {
     modeEl.value = savedMode;
   } else {
     modeEl.value = pickBestImageMode(allModes);
