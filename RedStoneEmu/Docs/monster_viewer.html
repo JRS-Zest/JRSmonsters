@@ -733,7 +733,7 @@ function buildMapList(filter = '') {
   el.innerHTML = '';
 
   const lf = filter.toLowerCase();
-  maps.forEach(m => {
+  [...maps].reverse().forEach(m => {
     if (isMapExcludedByName(m.name)) return;
     if (lf && !m.name.toLowerCase().includes(lf)) return;
     if (!m.bids || m.bids.length === 0) return;

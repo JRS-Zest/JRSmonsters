@@ -705,7 +705,7 @@ function buildMapList(filter = '') {
   el.innerHTML = '';
 
   const lf = filter.toLowerCase();
-  maps.forEach(m => {
+  [...maps].reverse().forEach(m => {
     if (lf && !m.name.toLowerCase().includes(lf)) return;
 
     if (currentLvFilter > 0) {
