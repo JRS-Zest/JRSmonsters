@@ -608,6 +608,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
 <!-- 生成された各データJSを読み込む -->
 <script src="monster_data.js"></script>
 <script src="skill_data.js"></script>
+<script src="monster_frame_counts.js"></script>
 <script>
 'use strict';
 
@@ -686,6 +687,7 @@ let searchTimer     = null;
 const DEFAULT_IMAGE_MODE = 'effect_id_minus_201';
 let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
+let frameCountLowerMap = null;
 
 /* ══════════════════════════════════════════════════
    初期化（scriptがbody末尾のためDOMContentLoaded不要・直接実行）
@@ -876,7 +878,40 @@ function sadToPngName(sadName) {
 function buildFrameVariantPngNames(pngName) {
   if (!pngName) return [];
   const stem = pngName.replace(/\.png$/i, '');
+  const frameCount = getFrameCountByStem(stem);
+  if (frameCount > 0) {
+    return Array.from({ length: frameCount }, (_, i) => `${stem}__f${String(i).padStart(3, '0')}.png`);
+  }
   return [`${stem}__m10.png`, `${stem}.png`, `${stem}__p10.png`];
+}
+
+function getFrameCountByStem(stem) {
+  if (!stem || typeof MONSTER_FRAME_COUNTS !== 'object' || !MONSTER_FRAME_COUNTS) return 0;
+  if (typeof MONSTER_FRAME_COUNTS[stem] === 'number') return MONSTER_FRAME_COUNTS[stem];
+  if (!frameCountLowerMap) {
+    frameCountLowerMap = {};
+    Object.keys(MONSTER_FRAME_COUNTS).forEach((k) => {
+      frameCountLowerMap[k.toLowerCase()] = MONSTER_FRAME_COUNTS[k];
+    });
+  }
+  return frameCountLowerMap[stem.toLowerCase()] || 0;
+}
+
+function extractFrameNumber(pngName) {
+  if (!pngName) return null;
+  const m = /__f(\d+)\.png$/i.exec(pngName);
+  if (!m) return null;
+  const n = parseInt(m[1], 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function getInitialVariantIndex(variantPngs) {
+  if (!variantPngs || variantPngs.length === 0) return 0;
+  const frameVariant = extractFrameNumber(variantPngs[0]);
+  if (frameVariant !== null) {
+    return Math.min(157, variantPngs.length - 1);
+  }
+  return variantPngs.length > 1 ? 1 : 0;
 }
 
 function toFileUrl(path) {
@@ -938,7 +973,10 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
   const wrap = imgEl.closest('.monster-img-wrap');
   const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
   if (tagEl) {
-    tagEl.textContent = `frame: ${labels[idx] || idx}`;
+    const fnum = extractFrameNumber(pngName);
+    tagEl.textContent = fnum === null
+      ? `frame: ${labels[idx] || idx}`
+      : `frame: ${fnum + 1}/${len} (#${fnum})`;
   }
 }
 
@@ -988,7 +1026,7 @@ function buildMonsterImageBlock(b) {
   const info = resolveMonsterSad(b);
   const png = sadToPngName(info.sad);
   const variantPngs = png ? buildFrameVariantPngNames(png) : [];
-  const initialVariantIndex = variantPngs.length > 1 ? 1 : 0;
+  const initialVariantIndex = getInitialVariantIndex(variantPngs);
   const srcList = variantPngs.length > 0
     ? buildImageSrcCandidates(variantPngs[initialVariantIndex])
     : [];
