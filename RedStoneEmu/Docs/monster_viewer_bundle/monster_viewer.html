@@ -910,6 +910,11 @@ function pickBestImageMode(modes) {
   return modes[0] || 'verified_only';
 }
 
+function isUsableDefaultImageMode(mode) {
+  // Keep startup modes to the mappings that are known to resolve in the bundled PNG set.
+  return ['effect_id_minus_201', 'image_id_minus_201', 'image_id_minus_100', 'job2_index'].includes(mode);
+}
+
 function setupImageControl() {
   const modeEl = document.getElementById('img-mode');
   const baseEl = document.getElementById('img-base-path');
@@ -923,7 +928,10 @@ function setupImageControl() {
   const savedMode = localStorage.getItem('monsterViewerImageMode');
   const allModes = Array.from(modeEl.options).map(o => o.value);
 
-  if (savedMode && allModes.includes(savedMode) && countImageCandidatesByMode(savedMode) > 0) {
+  if (savedMode &&
+      allModes.includes(savedMode) &&
+      isUsableDefaultImageMode(savedMode) &&
+      countImageCandidatesByMode(savedMode) > 0) {
     modeEl.value = savedMode;
   } else {
     modeEl.value = pickBestImageMode(allModes);
