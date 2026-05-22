@@ -873,6 +873,12 @@ function sadToPngName(sadName) {
   return sadName.replace(/\.sad$/i, '.png');
 }
 
+function buildFrameVariantPngNames(pngName) {
+  if (!pngName) return [];
+  const stem = pngName.replace(/\.png$/i, '');
+  return [`${stem}__m10.png`, `${stem}.png`, `${stem}__p10.png`];
+}
+
 function toFileUrl(path) {
   if (!path) return null;
   let p = path.replace(/\\/g, '/').trim();
@@ -899,6 +905,40 @@ function buildImageSrcCandidates(pngName) {
   // de-duplicate and drop empties
   return Array.from(new Set(candidates.filter(Boolean)));
 }
+
+function applyMonsterImgVariant(imgEl, variantIndex) {
+  const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
+  if (variantPngs.length === 0) return;
+
+  const len = variantPngs.length;
+  const idx = ((variantIndex % len) + len) % len;
+  const pngName = variantPngs[idx];
+  const srcList = buildImageSrcCandidates(pngName);
+  const src = srcList[0] || '';
+  if (!src) return;
+
+  imgEl.dataset.variantIndex = String(idx);
+  imgEl.dataset.srcList = srcList.join('|');
+  imgEl.dataset.srcIndex = '0';
+  imgEl.style.display = '';
+  if (imgEl.nextElementSibling) {
+    imgEl.nextElementSibling.style.display = 'none';
+  }
+  imgEl.src = src;
+
+  const labels = ['-10', '0', '+10'];
+  const wrap = imgEl.closest('.monster-img-wrap');
+  const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
+  if (tagEl) {
+    tagEl.textContent = `frame: ${labels[idx] || idx}`;
+  }
+}
+
+function cycleMonsterImgVariant(imgEl) {
+  const cur = parseInt(imgEl.dataset.variantIndex || '1', 10);
+  applyMonsterImgVariant(imgEl, cur + 1);
+}
+window.cycleMonsterImgVariant = cycleMonsterImgVariant;
 
 function handleMonsterImgError(imgEl) {
   const srcList = (imgEl.dataset.srcList || '').split('|').filter(Boolean);
@@ -939,7 +979,11 @@ function resolveMonsterSad(b) {
 function buildMonsterImageBlock(b) {
   const info = resolveMonsterSad(b);
   const png = sadToPngName(info.sad);
-  const srcList = png ? buildImageSrcCandidates(png) : [];
+  const variantPngs = png ? buildFrameVariantPngNames(png) : [];
+  const initialVariantIndex = variantPngs.length > 1 ? 1 : 0;
+  const srcList = variantPngs.length > 0
+    ? buildImageSrcCandidates(variantPngs[initialVariantIndex])
+    : [];
   const src = srcList[0] || '';
 
   if (!src) {
@@ -952,10 +996,13 @@ function buildMonsterImageBlock(b) {
 
   return `<div class="monster-img-wrap">
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
+         title="画像クリックでフレーム切替"
+         data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
          data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0"
+         onclick="cycleMonsterImgVariant(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
-    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br>src: ${escHtml(src)}</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">frame: 0</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
 
