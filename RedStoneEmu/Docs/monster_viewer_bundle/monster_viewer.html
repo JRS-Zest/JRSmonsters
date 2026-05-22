@@ -1019,11 +1019,12 @@ function resolveMonsterSad(b) {
   const idx = currentImageMode === 'verified_only'
     ? null
     : (candidateIndex ? candidateIndex[currentImageMode] : null);
+  const normalizedIdx = sad ? idx : null;
 
   return {
     mode: currentImageMode,
     sad,
-    idx,
+    idx: normalizedIdx,
     imageId: b.img && typeof b.img.image_id_server !== 'undefined' ? b.img.image_id_server : null,
   };
 }
