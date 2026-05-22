@@ -971,12 +971,22 @@ function toFileUrl(path) {
 
 function buildImageSrcCandidates(pngName) {
   const candidates = [];
+  const nameVariants = [pngName];
+  const lower = typeof pngName === 'string' ? pngName.toLowerCase() : pngName;
+  const upper = typeof pngName === 'string' ? pngName.toUpperCase() : pngName;
+  if (lower && lower !== pngName) nameVariants.push(lower);
+  if (upper && upper !== pngName && upper !== lower) nameVariants.push(upper);
+
   // Prefer workspace-local PNG cache first.
-  candidates.push(toFileUrl(`./monster_image/${pngName}`));
+  nameVariants.forEach((n) => {
+    candidates.push(toFileUrl(`./monster_image/${n}`));
+  });
 
   const trimmedBase = (currentImageBase || '').trim().replace(/[\\/]+$/, '');
   if (trimmedBase && trimmedBase !== './monster_image') {
-    candidates.push(toFileUrl(`${trimmedBase}/${pngName}`));
+    nameVariants.forEach((n) => {
+      candidates.push(toFileUrl(`${trimmedBase}/${n}`));
+    });
   }
 
   // de-duplicate and drop empties
