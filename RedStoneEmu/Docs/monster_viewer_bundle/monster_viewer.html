@@ -689,7 +689,7 @@ let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
-const MAP_FILTER_VERSION = 'guildhall-hide-v3';
+const MAP_FILTER_VERSION = 'guildhall-hide-v4';
 const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
 
 function isMapExcludedByName(mapName) {
@@ -713,6 +713,7 @@ function normalizeMapName(mapName) {
 function normalizeFamilyMapName(mapName) {
   const n = normalizeMapName(mapName);
   return n
+    .replace(/オリジナル/g, '')
     .replace(/ミラー[+\-−－ー]?\d*/g, '')
     .replace(/超級[+\-−－ー]?\d*/g, '超級');
 }
@@ -722,7 +723,17 @@ function isMirrorVariantMapName(mapName) {
   return /ミラー/.test(n);
 }
 
+function isOriginalVariantMapName(mapName) {
+  const n = normalizeMapName(mapName);
+  return /オリジナル/.test(n);
+}
+
 function pickRepresentativeMap(a, b) {
+  const ao = isOriginalVariantMapName(a.name);
+  const bo = isOriginalVariantMapName(b.name);
+  // Prefer explicit original over all other variants in the same family.
+  if (ao !== bo) return ao ? a : b;
+
   const am = isMirrorVariantMapName(a.name);
   const bm = isMirrorVariantMapName(b.name);
   // Keep base map when both belong to the same family.
