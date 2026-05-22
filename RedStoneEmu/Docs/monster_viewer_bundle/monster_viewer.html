@@ -688,6 +688,9 @@ const DEFAULT_IMAGE_MODE = 'effect_id_minus_201';
 let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
+const MONSTER_IMG_ANIM_INTERVAL_MS = 500;
+let activeMonsterImgTimer = null;
+let activeMonsterImgEl = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
 const MAP_FILTER_VERSION = 'guildhall-hide-v8';
 const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
@@ -927,6 +930,8 @@ function renderMapMonsters(mid) {
   const grid    = document.getElementById('monster-grid');
   const title   = document.getElementById('main-title');
 
+  stopMonsterImgAnimation();
+
   if (!map) { title.textContent = 'マップが見つかりません'; grid.innerHTML = ''; return; }
   if (isMapExcludedByName(map.name)) {
     title.textContent = '除外マップです';
@@ -967,6 +972,8 @@ function renderSingleBreed(bid) {
   const grid   = document.getElementById('monster-grid');
   const title  = document.getElementById('main-title');
   if (!breed) return;
+
+  stopMonsterImgAnimation();
 
   title.textContent = `🔍 「${breed.name}」の検索結果`;
   grid.innerHTML = '';
@@ -1091,11 +1098,63 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
   }
 }
 
-function cycleMonsterImgVariant(imgEl) {
-  const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
-  applyMonsterImgVariant(imgEl, cur + 1);
+function setMonsterImgPlayTag(imgEl, isPlaying) {
+  const wrap = imgEl ? imgEl.closest('.monster-img-wrap') : null;
+  const playEl = wrap ? wrap.querySelector('.js-play-tag') : null;
+  if (playEl) {
+    playEl.textContent = isPlaying ? '再生中' : '停止中';
+  }
 }
-window.cycleMonsterImgVariant = cycleMonsterImgVariant;
+
+function stopMonsterImgAnimation(imgEl = null) {
+  const target = imgEl || activeMonsterImgEl;
+  if (activeMonsterImgTimer && (!imgEl || target === activeMonsterImgEl)) {
+    clearInterval(activeMonsterImgTimer);
+    activeMonsterImgTimer = null;
+  }
+
+  if (target) {
+    target.dataset.animating = '0';
+    setMonsterImgPlayTag(target, false);
+  }
+
+  if (!imgEl || target === activeMonsterImgEl) {
+    activeMonsterImgEl = null;
+  }
+}
+
+function startMonsterImgAnimation(imgEl) {
+  if (!imgEl) return;
+
+  if (activeMonsterImgEl && activeMonsterImgEl !== imgEl) {
+    stopMonsterImgAnimation(activeMonsterImgEl);
+  }
+  stopMonsterImgAnimation(imgEl);
+
+  activeMonsterImgEl = imgEl;
+  imgEl.dataset.animating = '1';
+  setMonsterImgPlayTag(imgEl, true);
+
+  activeMonsterImgTimer = setInterval(() => {
+    if (!document.body.contains(imgEl)) {
+      stopMonsterImgAnimation(imgEl);
+      return;
+    }
+    const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
+    applyMonsterImgVariant(imgEl, cur + 1);
+  }, MONSTER_IMG_ANIM_INTERVAL_MS);
+}
+
+function toggleMonsterImgAnimation(imgEl) {
+  if (!imgEl) return;
+  const isPlaying = imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl;
+  if (isPlaying) {
+    stopMonsterImgAnimation(imgEl);
+  } else {
+    startMonsterImgAnimation(imgEl);
+  }
+}
+window.toggleMonsterImgAnimation = toggleMonsterImgAnimation;
 
 function handleMonsterImgError(imgEl) {
   const srcList = (imgEl.dataset.srcList || '').split('|').filter(Boolean);
@@ -1109,6 +1168,9 @@ function handleMonsterImgError(imgEl) {
   imgEl.style.display = 'none';
   if (imgEl.nextElementSibling) {
     imgEl.nextElementSibling.style.display = 'flex';
+  }
+  if (imgEl.dataset.animating === '1') {
+    stopMonsterImgAnimation(imgEl);
   }
 }
 
@@ -1155,13 +1217,13 @@ function buildMonsterImageBlock(b) {
 
   return `<div class="monster-img-wrap">
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
-         title="画像クリックでフレーム切替"
+         title="画像クリックで再生/停止"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0"
-         onclick="cycleMonsterImgVariant(this)"
+         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-animating="0"
+         onclick="toggleMonsterImgAnimation(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
-    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br>src: ${escHtml(src)}</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><span class="js-play-tag">停止中</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
 
