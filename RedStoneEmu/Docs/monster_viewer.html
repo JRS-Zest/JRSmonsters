@@ -720,7 +720,6 @@ const DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS = 100;
 let monsterImgAnimIntervalMs = DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS;
 let activeMonsterImgTimer = null;
 let activeMonsterImgEl = null;
-let monsterImgAnimTokenSeed = 0;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
 
 function isMapExcludedByName(mapName) {
@@ -940,8 +939,7 @@ function setupPlaybackSpeedControls() {
     });
     if (activeMonsterImgTimer && activeMonsterImgEl) {
       clearTimeout(activeMonsterImgTimer);
-      const token = parseInt(activeMonsterImgEl.dataset.animToken || '0', 10);
-      scheduleMonsterImgAnimation(activeMonsterImgEl, token);
+      scheduleMonsterImgAnimation(activeMonsterImgEl);
     }
   };
 
@@ -1081,14 +1079,12 @@ function handleMonsterImgLoad(imgEl) {
   imgEl.dataset.failedVariantHops = '0';
   imgEl.dataset.missStreak = '0';
 
-  if (imgEl.dataset.animating === '1' && imgEl.dataset.awaitingPlayStart === '1') {
-    imgEl.dataset.awaitingPlayStart = '0';
-    const token = parseInt(imgEl.dataset.animToken || '0', 10);
+  if (imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl) {
     if (activeMonsterImgTimer && activeMonsterImgEl === imgEl) {
       clearTimeout(activeMonsterImgTimer);
       activeMonsterImgTimer = null;
     }
-    scheduleMonsterImgAnimation(imgEl, token);
+    scheduleMonsterImgAnimation(imgEl);
   }
 }
 
@@ -1110,17 +1106,15 @@ function formatPlaybackSpeedText() {
   return `${sec}秒/コマ (${fps}fps)`;
 }
 
-function scheduleMonsterImgAnimation(imgEl, token) {
+function scheduleMonsterImgAnimation(imgEl) {
   activeMonsterImgTimer = setTimeout(() => {
     if (!document.body.contains(imgEl)) {
       stopMonsterImgAnimation(imgEl);
       return;
     }
-    if (imgEl.dataset.animating !== '1') return;
-    if (parseInt(imgEl.dataset.animToken || '0', 10) !== token) return;
+    if (imgEl.dataset.animating !== '1' || activeMonsterImgEl !== imgEl) return;
     const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
     applyMonsterImgVariant(imgEl, cur + 1);
-    scheduleMonsterImgAnimation(imgEl, token);
   }, monsterImgAnimIntervalMs);
 }
 
@@ -1133,8 +1127,6 @@ function stopMonsterImgAnimation(imgEl = null, restorePose = true) {
 
   if (target) {
     target.dataset.animating = '0';
-    target.dataset.awaitingPlayStart = '0';
-    target.dataset.animToken = String(++monsterImgAnimTokenSeed);
     setMonsterImgPlayTag(target, false);
   }
 
@@ -1156,11 +1148,8 @@ function startMonsterImgAnimation(imgEl) {
   }
   stopMonsterImgAnimation(imgEl, false);
 
-  const token = ++monsterImgAnimTokenSeed;
   activeMonsterImgEl = imgEl;
   imgEl.dataset.animating = '1';
-  imgEl.dataset.animToken = String(token);
-  imgEl.dataset.awaitingPlayStart = '1';
   setMonsterImgPlayTag(imgEl, true);
 
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
@@ -1250,7 +1239,7 @@ function buildMonsterImageBlock(b) {
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
          title="再生はボタンで操作"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-          data-animating="0" data-awaiting-play-start="0" data-miss-streak="0" data-failed-variant-hops="0"
+         data-animating="0" data-miss-streak="0" data-failed-variant-hops="0"
           onload="handleMonsterImgLoad(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
