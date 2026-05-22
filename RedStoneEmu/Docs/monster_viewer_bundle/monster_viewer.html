@@ -1182,6 +1182,16 @@ function handleMonsterImgLoad(imgEl) {
   if (Number.isFinite(curSrcIndex) && curSrcIndex >= 0) {
     imgEl.dataset.preferredSrcIndex = String(curSrcIndex);
   }
+
+  if (imgEl.dataset.animating === '1' && imgEl.dataset.awaitingPlayStart === '1') {
+    imgEl.dataset.awaitingPlayStart = '0';
+    const token = parseInt(imgEl.dataset.animToken || '0', 10);
+    if (activeMonsterImgTimer && activeMonsterImgEl === imgEl) {
+      clearTimeout(activeMonsterImgTimer);
+      activeMonsterImgTimer = null;
+    }
+    scheduleMonsterImgAnimation(imgEl, token);
+  }
 }
 
 function setMonsterImgPlayTag(imgEl, isPlaying) {
@@ -1225,6 +1235,7 @@ function stopMonsterImgAnimation(imgEl = null, restorePose = true) {
 
   if (target) {
     target.dataset.animating = '0';
+    target.dataset.awaitingPlayStart = '0';
     target.dataset.animToken = String(++monsterImgAnimTokenSeed);
     setMonsterImgPlayTag(target, false);
   }
@@ -1251,11 +1262,11 @@ function startMonsterImgAnimation(imgEl) {
   activeMonsterImgEl = imgEl;
   imgEl.dataset.animating = '1';
   imgEl.dataset.animToken = String(token);
+  imgEl.dataset.awaitingPlayStart = '1';
   setMonsterImgPlayTag(imgEl, true);
 
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
   applyMonsterImgVariant(imgEl, getPlayStartVariantIndex(variantPngs));
-  scheduleMonsterImgAnimation(imgEl, token);
 }
 
 function toggleMonsterImgAnimation(imgEl) {
@@ -1352,7 +1363,7 @@ function buildMonsterImageBlock(b) {
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
          title="再生はボタンで操作"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-preferred-src-index="0" data-animating="0" data-failed-variant-hops="0"
+         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-preferred-src-index="0" data-animating="0" data-awaiting-play-start="0" data-failed-variant-hops="0"
           onload="handleMonsterImgLoad(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
