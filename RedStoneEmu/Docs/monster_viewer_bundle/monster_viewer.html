@@ -689,7 +689,7 @@ let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
-const MAP_FILTER_VERSION = 'guildhall-hide-v4';
+const MAP_FILTER_VERSION = 'guildhall-hide-v5';
 const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
 
 function isMapExcludedByName(mapName) {
@@ -728,6 +728,14 @@ function isOriginalVariantMapName(mapName) {
   return /オリジナル/.test(n);
 }
 
+function getSuperVariantNumber(mapName) {
+  const n = normalizeMapName(mapName);
+  const m = /超級[+\-−－ー]?(\d+)/.exec(n);
+  if (!m) return null;
+  const v = parseInt(m[1], 10);
+  return Number.isFinite(v) ? v : null;
+}
+
 function pickRepresentativeMap(a, b) {
   const ao = isOriginalVariantMapName(a.name);
   const bo = isOriginalVariantMapName(b.name);
@@ -738,6 +746,14 @@ function pickRepresentativeMap(a, b) {
   const bm = isMirrorVariantMapName(b.name);
   // Keep base map when both belong to the same family.
   if (am !== bm) return am ? b : a;
+
+  const as = getSuperVariantNumber(a.name);
+  const bs = getSuperVariantNumber(b.name);
+  // For 超級 variants, keep -1 when present.
+  if (as === 1 && bs !== 1) return a;
+  if (bs === 1 && as !== 1) return b;
+  // Otherwise keep the smaller super variant number.
+  if (as !== null && bs !== null && as !== bs) return as < bs ? a : b;
 
   const al = (a.name || '').length;
   const bl = (b.name || '').length;
