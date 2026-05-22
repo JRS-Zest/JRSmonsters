@@ -505,22 +505,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
         <button class="btn btn-accent2" id="btn-apply-lv">再計算</button>
         <button class="btn btn-formula" id="btn-formula">計算式</button>
       </div>
-      <label>🖼 画像確認</label>
-      <div id="img-row">
-        <select id="img-mode" title="SAD候補の仮説切替">
-          <option value="verified_only">verified_only</option>
-          <option value="job2_index">job2_index</option>
-          <option value="image_id_server">image_id_server</option>
-          <option value="image_id_minus_100">image_id_minus_100</option>
-          <option value="image_id_minus_201" selected>image_id_minus_201</option>
-          <option value="group_unknown_4">group_unknown_4</option>
-          <option value="group_imgsum_0">group_imgsum_0</option>
-          <option value="group_imgsum_1">group_imgsum_1</option>
-          <option value="group_imgsum_2">group_imgsum_2</option>
-        </select>
-        <input type="text" id="img-base-path" value="./monster_image" title=".sad(.png) のフォルダ（固定）" readonly>
-        <button class="btn btn-accent" id="btn-apply-img">反映</button>
-      </div>
     </div>
   </header>
 
@@ -699,9 +683,9 @@ let currentLv       = 100;
 let currentMapId    = null;
 let currentLvFilter = 0;
 let searchTimer     = null;
-let currentImageMode = 'effect_id_minus_201';
+const DEFAULT_IMAGE_MODE = 'effect_id_minus_201';
+let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
-let currentImageBase = DEFAULT_IMAGE_BASE;
 
 /* ══════════════════════════════════════════════════
    初期化（scriptがbody末尾のためDOMContentLoaded不要・直接実行）
@@ -880,78 +864,8 @@ function renderSingleBreed(bid) {
   grid.appendChild(buildCard(breed, currentLv, null, true));
 }
 
-function countImageCandidatesByMode(mode) {
-  let count = 0;
-  (MONSTER_DATA.breeds || []).forEach((b) => {
-    const sad = mode === 'verified_only'
-      ? (b.img && b.img.verified_sad)
-      : (b.img && b.img.sad_candidates ? b.img.sad_candidates[mode] : null);
-    if (sad) count += 1;
-  });
-  return count;
-}
-
-function pickBestImageMode(modes) {
-  const preferred = [
-    'effect_id_minus_201',
-    'image_id_minus_201',
-    'image_id_minus_100',
-    'job2_index',
-    'image_id_server',
-    'group_unknown_4',
-    'group_imgsum_0',
-    'group_imgsum_1',
-    'group_imgsum_2',
-    'verified_only',
-  ];
-  for (const m of preferred) {
-    if (modes.includes(m) && countImageCandidatesByMode(m) > 0) return m;
-  }
-  return modes[0] || 'verified_only';
-}
-
-function isUsableDefaultImageMode(mode) {
-  // Keep startup modes to the mappings that are known to resolve in the bundled PNG set.
-  return ['effect_id_minus_201', 'image_id_minus_201', 'image_id_minus_100', 'job2_index'].includes(mode);
-}
-
 function setupImageControl() {
-  const modeEl = document.getElementById('img-mode');
-  const baseEl = document.getElementById('img-base-path');
-  const btnEl  = document.getElementById('btn-apply-img');
-
-  if (MONSTER_DATA.image_map_meta && Array.isArray(MONSTER_DATA.image_map_meta.hypotheses)) {
-    const options = MONSTER_DATA.image_map_meta.hypotheses;
-    modeEl.innerHTML = options.map((o) => `<option value="${escHtml(o)}">${escHtml(o)}</option>`).join('');
-  }
-
-  const savedMode = localStorage.getItem('monsterViewerImageMode');
-  const allModes = Array.from(modeEl.options).map(o => o.value);
-
-  if (savedMode &&
-      allModes.includes(savedMode) &&
-      isUsableDefaultImageMode(savedMode) &&
-      countImageCandidatesByMode(savedMode) > 0) {
-    modeEl.value = savedMode;
-  } else {
-    modeEl.value = pickBestImageMode(allModes);
-  }
-  // Base path is fixed to workspace-local PNG folder.
-  baseEl.value = DEFAULT_IMAGE_BASE;
-  localStorage.removeItem('monsterViewerImageBase');
-
-  const apply = () => {
-    currentImageMode = modeEl.value;
-    currentImageBase = DEFAULT_IMAGE_BASE;
-    localStorage.setItem('monsterViewerImageMode', currentImageMode);
-    if (currentMapId !== null) {
-      renderMapMonsters(currentMapId);
-    }
-  };
-
-  modeEl.addEventListener('change', apply);
-  btnEl.addEventListener('click', apply);
-  apply();
+  currentImageMode = DEFAULT_IMAGE_MODE;
 }
 
 function sadToPngName(sadName) {
@@ -979,15 +893,8 @@ function buildImageSrcCandidates(pngName) {
 
   // Prefer workspace-local PNG cache first.
   nameVariants.forEach((n) => {
-    candidates.push(toFileUrl(`./monster_image/${n}`));
+    candidates.push(toFileUrl(`${DEFAULT_IMAGE_BASE}/${n}`));
   });
-
-  const trimmedBase = (currentImageBase || '').trim().replace(/[\\/]+$/, '');
-  if (trimmedBase && trimmedBase !== './monster_image') {
-    nameVariants.forEach((n) => {
-      candidates.push(toFileUrl(`${trimmedBase}/${n}`));
-    });
-  }
 
   // de-duplicate and drop empties
   return Array.from(new Set(candidates.filter(Boolean)));
