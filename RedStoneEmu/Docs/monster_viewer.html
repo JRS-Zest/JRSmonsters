@@ -1065,12 +1065,16 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
 
   imgEl.dataset.variantIndex = String(idx);
   imgEl.dataset.srcList = srcList.join('|');
-  imgEl.dataset.srcIndex = '0';
+  const preferredSrcIndex = parseInt(imgEl.dataset.preferredSrcIndex || '0', 10);
+  const initialSrcIndex = Number.isFinite(preferredSrcIndex) && preferredSrcIndex >= 0 && preferredSrcIndex < srcList.length
+    ? preferredSrcIndex
+    : 0;
+  imgEl.dataset.srcIndex = String(initialSrcIndex);
   imgEl.style.display = '';
   if (imgEl.nextElementSibling) {
     imgEl.nextElementSibling.style.display = 'none';
   }
-  imgEl.src = src;
+  imgEl.src = srcList[initialSrcIndex] || src;
 
   const wrap = imgEl.closest('.monster-img-wrap');
   const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
@@ -1082,6 +1086,10 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
 function handleMonsterImgLoad(imgEl) {
   if (!imgEl) return;
   imgEl.dataset.failedVariantHops = '0';
+  const curSrcIndex = parseInt(imgEl.dataset.srcIndex || '0', 10);
+  if (Number.isFinite(curSrcIndex) && curSrcIndex >= 0) {
+    imgEl.dataset.preferredSrcIndex = String(curSrcIndex);
+  }
 }
 
 function setMonsterImgPlayTag(imgEl, isPlaying) {
@@ -1252,7 +1260,7 @@ function buildMonsterImageBlock(b) {
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
          title="再生はボタンで操作"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-animating="0" data-failed-variant-hops="0"
+         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-preferred-src-index="0" data-animating="0" data-failed-variant-hops="0"
           onload="handleMonsterImgLoad(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
