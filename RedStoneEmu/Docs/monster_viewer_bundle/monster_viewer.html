@@ -1028,18 +1028,55 @@ function resolveMonsterSad(b) {
   };
 }
 
+function buildMonsterPngCandidates(b, primarySad = null) {
+  const out = [];
+  const pushSad = (sad) => {
+    const png = sadToPngName(sad);
+    if (png) out.push(png);
+  };
+
+  pushSad(primarySad);
+
+  const c = b.img && b.img.sad_candidates ? b.img.sad_candidates : {};
+  const order = [
+    'effect_id_minus_201',
+    'image_id_minus_201',
+    'image_id_minus_100',
+    'job2_index',
+    'image_id_server',
+    'creature_name_match',
+    'group_unknown_4',
+    'group_imgsum_0',
+    'group_imgsum_1',
+    'group_imgsum_2',
+  ];
+
+  if (currentImageMode === 'verified_only') {
+    pushSad(b.img && b.img.verified_sad ? b.img.verified_sad : null);
+  } else {
+    pushSad(c[currentImageMode]);
+  }
+
+  order.forEach((m) => pushSad(c[m]));
+  pushSad(b.img && b.img.verified_sad ? b.img.verified_sad : null);
+
+  return Array.from(new Set(out));
+}
+
 function buildMonsterImageBlock(b) {
   const info = resolveMonsterSad(b);
-  if (!info.sad) {
+  const pngCandidates = buildMonsterPngCandidates(b, info.sad);
+  const srcList = pngCandidates.flatMap((pngName) => buildImageSrcCandidates(pngName));
+  const src = srcList[0] || '';
+
+  if (!src) {
     return `<div class="monster-img-wrap">
       <div class="monster-img-empty">画像候補なし</div>
-      <div class="monster-img-meta"><b>画像マッピング</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>image_id: ${info.imageId ?? '-'}<br>sad: -</div>
+      <div class="monster-img-meta"><b>画像マッピング</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>image_id: ${info.imageId ?? '-'}<br>sad: ${escHtml(info.sad || '-')}</div>
     </div>`;
   }
 
-  const png = sadToPngName(info.sad);
-  const srcList = buildImageSrcCandidates(png);
-  const src = srcList[0] || '';
+  const png = sadToPngName(info.sad) || pngCandidates[0] || '-';
 
   return `<div class="monster-img-wrap">
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
