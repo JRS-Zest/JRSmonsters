@@ -991,6 +991,7 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
   if (!src) return;
 
   imgEl.dataset.variantIndex = String(idx);
+  imgEl.dataset.failedVariantHops = '0';
   imgEl.dataset.srcList = srcList.join('|');
   imgEl.dataset.srcIndex = '0';
   imgEl.style.display = '';
@@ -1073,6 +1074,17 @@ function handleMonsterImgError(imgEl) {
     imgEl.src = srcList[next];
     return;
   }
+
+  const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
+  const curVariant = parseInt(imgEl.dataset.variantIndex || '0', 10);
+  const hops = parseInt(imgEl.dataset.failedVariantHops || '0', 10);
+  if (variantPngs.length > 1 && hops < variantPngs.length - 1) {
+    imgEl.dataset.failedVariantHops = String(hops + 1);
+    applyMonsterImgVariant(imgEl, curVariant + 1);
+    return;
+  }
+  imgEl.dataset.failedVariantHops = '0';
+
   imgEl.style.display = 'none';
   if (imgEl.nextElementSibling) {
     imgEl.nextElementSibling.style.display = 'flex';
@@ -1127,7 +1139,7 @@ function buildMonsterImageBlock(b) {
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
          title="画像クリックで再生/停止"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-animating="0"
+         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-animating="0" data-failed-variant-hops="0"
          onclick="toggleMonsterImgAnimation(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
