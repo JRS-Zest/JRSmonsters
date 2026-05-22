@@ -1083,12 +1083,22 @@ function extractFrameNumber(pngName) {
 }
 
 function getInitialVariantIndex(variantPngs) {
+  return getStopVariantIndex(variantPngs);
+}
+
+function getStopVariantIndex(variantPngs) {
   if (!variantPngs || variantPngs.length === 0) return 0;
   const frameVariant = extractFrameNumber(variantPngs[0]);
   if (frameVariant !== null) {
+    // Keep the historical idle facing frame when not playing.
     return Math.min(157, variantPngs.length - 1);
   }
   return variantPngs.length > 1 ? 1 : 0;
+}
+
+function getPlayStartVariantIndex(variantPngs) {
+  if (!variantPngs || variantPngs.length === 0) return 0;
+  return 0;
 }
 
 function formatFrameTagText(pngName, idx, len) {
@@ -1198,7 +1208,7 @@ function scheduleMonsterImgAnimation(imgEl, token) {
   }, monsterImgAnimIntervalMs);
 }
 
-function stopMonsterImgAnimation(imgEl = null) {
+function stopMonsterImgAnimation(imgEl = null, restorePose = true) {
   const target = imgEl || activeMonsterImgEl;
   if (activeMonsterImgTimer && (!imgEl || target === activeMonsterImgEl)) {
     clearTimeout(activeMonsterImgTimer);
@@ -1214,6 +1224,11 @@ function stopMonsterImgAnimation(imgEl = null) {
   if (!imgEl || target === activeMonsterImgEl) {
     activeMonsterImgEl = null;
   }
+
+  if (restorePose && target && document.body.contains(target)) {
+    const variantPngs = (target.dataset.variantPngs || '').split('|').filter(Boolean);
+    applyMonsterImgVariant(target, getStopVariantIndex(variantPngs));
+  }
 }
 
 function startMonsterImgAnimation(imgEl) {
@@ -1222,13 +1237,16 @@ function startMonsterImgAnimation(imgEl) {
   if (activeMonsterImgEl && activeMonsterImgEl !== imgEl) {
     stopMonsterImgAnimation(activeMonsterImgEl);
   }
-  stopMonsterImgAnimation(imgEl);
+  stopMonsterImgAnimation(imgEl, false);
 
   const token = ++monsterImgAnimTokenSeed;
   activeMonsterImgEl = imgEl;
   imgEl.dataset.animating = '1';
   imgEl.dataset.animToken = String(token);
   setMonsterImgPlayTag(imgEl, true);
+
+  const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
+  applyMonsterImgVariant(imgEl, getPlayStartVariantIndex(variantPngs));
   scheduleMonsterImgAnimation(imgEl, token);
 }
 
