@@ -714,8 +714,8 @@ function normalizeFamilyMapName(mapName) {
   const n = normalizeMapName(mapName);
   return n
     .replace(/オリジナル/g, '')
-    .replace(/ミラー[+\-−－ー]?\d*/g, '')
-    .replace(/超級[+\-−－ー]?\d*/g, '超級');
+    .replace(/ミラー[+\-−－ー―‐]?\d*/g, '')
+    .replace(/超級[+\-−－ー―‐]?\d*/g, '超級');
 }
 
 function isMirrorVariantMapName(mapName) {
@@ -730,7 +730,7 @@ function isOriginalVariantMapName(mapName) {
 
 function getSuperVariantNumber(mapName) {
   const n = normalizeMapName(mapName);
-  const m = /超級[+\-−－ー]?(\d+)/.exec(n);
+  const m = /超級[+\-−－ー―‐]?(\d+)/.exec(n);
   if (!m) return null;
   const v = parseInt(m[1], 10);
   return Number.isFinite(v) ? v : null;
