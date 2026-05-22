@@ -720,6 +720,7 @@ const DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS = 100;
 let monsterImgAnimIntervalMs = DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS;
 let activeMonsterImgTimer = null;
 let activeMonsterImgEl = null;
+let monsterImgAnimTokenSeed = 0;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
 
 function isMapExcludedByName(mapName) {
@@ -938,8 +939,9 @@ function setupPlaybackSpeedControls() {
       el.textContent = speedText;
     });
     if (activeMonsterImgTimer && activeMonsterImgEl) {
-      clearInterval(activeMonsterImgTimer);
-      scheduleMonsterImgAnimation(activeMonsterImgEl);
+      clearTimeout(activeMonsterImgTimer);
+      const token = parseInt(activeMonsterImgEl.dataset.animToken || '0', 10);
+      scheduleMonsterImgAnimation(activeMonsterImgEl, token);
     }
   };
 
@@ -1090,26 +1092,30 @@ function formatPlaybackSpeedText() {
   return `${sec}秒/コマ (${fps}fps)`;
 }
 
-function scheduleMonsterImgAnimation(imgEl) {
-  activeMonsterImgTimer = setInterval(() => {
+function scheduleMonsterImgAnimation(imgEl, token) {
+  activeMonsterImgTimer = setTimeout(() => {
     if (!document.body.contains(imgEl)) {
       stopMonsterImgAnimation(imgEl);
       return;
     }
+    if (imgEl.dataset.animating !== '1') return;
+    if (parseInt(imgEl.dataset.animToken || '0', 10) !== token) return;
     const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
     applyMonsterImgVariant(imgEl, cur + 1);
+    scheduleMonsterImgAnimation(imgEl, token);
   }, monsterImgAnimIntervalMs);
 }
 
 function stopMonsterImgAnimation(imgEl = null) {
   const target = imgEl || activeMonsterImgEl;
   if (activeMonsterImgTimer && (!imgEl || target === activeMonsterImgEl)) {
-    clearInterval(activeMonsterImgTimer);
+    clearTimeout(activeMonsterImgTimer);
     activeMonsterImgTimer = null;
   }
 
   if (target) {
     target.dataset.animating = '0';
+    target.dataset.animToken = String(++monsterImgAnimTokenSeed);
     setMonsterImgPlayTag(target, false);
   }
 
@@ -1126,10 +1132,12 @@ function startMonsterImgAnimation(imgEl) {
   }
   stopMonsterImgAnimation(imgEl);
 
+  const token = ++monsterImgAnimTokenSeed;
   activeMonsterImgEl = imgEl;
   imgEl.dataset.animating = '1';
+  imgEl.dataset.animToken = String(token);
   setMonsterImgPlayTag(imgEl, true);
-  scheduleMonsterImgAnimation(imgEl);
+  scheduleMonsterImgAnimation(imgEl, token);
 }
 
 function toggleMonsterImgAnimation(imgEl) {
