@@ -894,6 +894,14 @@ function buildImageSrcCandidates(pngName) {
   const nameVariants = [pngName];
   const lower = typeof pngName === 'string' ? pngName.toLowerCase() : pngName;
   const upper = typeof pngName === 'string' ? pngName.toUpperCase() : pngName;
+  const firstLower = (typeof pngName === 'string' && pngName.length > 0)
+    ? (pngName.charAt(0).toLowerCase() + pngName.slice(1))
+    : pngName;
+  const firstUpper = (typeof pngName === 'string' && pngName.length > 0)
+    ? (pngName.charAt(0).toUpperCase() + pngName.slice(1))
+    : pngName;
+  if (firstLower && firstLower !== pngName) nameVariants.push(firstLower);
+  if (firstUpper && firstUpper !== pngName && firstUpper !== firstLower) nameVariants.push(firstUpper);
   if (lower && lower !== pngName) nameVariants.push(lower);
   if (upper && upper !== pngName && upper !== lower) nameVariants.push(upper);
 
