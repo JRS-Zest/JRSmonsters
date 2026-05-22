@@ -689,7 +689,7 @@ let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
-const MAP_FILTER_VERSION = 'guildhall-hide-v7';
+const MAP_FILTER_VERSION = 'guildhall-hide-v8';
 const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
 
 function isMapExcludedByName(mapName) {
@@ -781,9 +781,7 @@ function getVisibleMaps(allMaps) {
   const byKey = new Map();
   allMaps.forEach((m) => {
     if (isMapExcludedByName(m.name)) return;
-    const key = isFamilyMapName(m.name)
-      ? `family:${normalizeFamilyMapName(m.name)}`
-      : `id:${m.id}`;
+    const key = `family:${normalizeFamilyMapName(m.name)}`;
     const cur = byKey.get(key);
     byKey.set(key, cur ? pickRepresentativeMap(cur, m) : m);
   });
