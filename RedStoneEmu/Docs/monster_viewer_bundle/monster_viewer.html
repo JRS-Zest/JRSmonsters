@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RED STONE モンスター図鑑</title>
+<style>
+/* ══════════════════════════════════════════════════
+   リセット & ベース
+══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:         #1a1a2e;
+  --surface:    #16213e;
+  --card:       #0f3460;
+  --accent:     #e94560;
+  --accent2:    #f5a623;
+  --text:       #e0e0e0;
+  --text-muted: #8a8fa8;
+  --border:     #2a3a5a;
+  --green:      #4caf50;
+  --blue:       #42a5f5;
+  --yellow:     #ffca28;
+  --red:        #ef5350;
+  --sidebar-w:  260px;
+  --header-h:   110px;
+}
+html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI', Meiryo, sans-serif; font-size: 13px; background: var(--bg); color: var(--text); }
+
+/* ══════════════════════════════════════════════════
+   3カラムレイアウト
+══════════════════════════════════════════════════ */
+#layout {
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height: 100vh;
+}
+#header {
+  grid-column: 1 / 3;
+  background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+  z-index: 10;
+}
+#sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+#main {
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ══════════════════════════════════════════════════
+   ヘッダー
+══════════════════════════════════════════════════ */
+#header h1 {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--accent);
+  letter-spacing: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#header h1 span { color: var(--accent2); }
+#search-wrap {
+  flex: 1;
+  max-width: 520px;
+}
+#search-wrap label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+#search-row { display: flex; gap: 8px; }
+#search-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #0f3460;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+#search-input:focus { border-color: var(--accent); }
+#search-results {
+  position: absolute;
+  top: calc(var(--header-h) - 8px);
+  left: calc(var(--sidebar-w) + 20px);
+  background: #0f3460;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  width: 360px;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  display: none;
+}
+#search-results.show { display: block; }
+.search-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.search-item:last-child { border-bottom: none; }
+.search-item:hover { background: var(--card); }
+.search-item-name { font-weight: bold; }
+.search-item-meta { font-size: 11px; color: var(--text-muted); }
+
+#lv-wrap { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+#lv-wrap label { font-size: 11px; color: var(--text-muted); }
+#lv-wrap .lv-row { display: flex; align-items: center; gap: 8px; }
+#img-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+#img-mode {
+  padding: 5px 8px;
+  background: #0f3460;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  min-width: 140px;
+}
+#img-base-path {
+  width: 300px;
+  max-width: 38vw;
+  padding: 5px 8px;
+  background: #0f3460;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+}
+#lv-input {
+  width: 72px;
+  padding: 6px 10px;
+  background: #0f3460;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+}
+#lv-input:focus { border-color: var(--accent2); }
+.btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background .15s;
+}
+.btn-accent  { background: var(--accent);  color: #fff; }
+.btn-accent:hover  { background: #c73652; }
+.btn-accent2 { background: var(--accent2); color: #1a1a2e; }
+.btn-accent2:hover { background: #d48e1a; }
+.btn-formula { background: #2a3a6a; color: var(--text); border: 1px solid var(--border); }
+.btn-formula:hover { background: var(--card); border-color: var(--accent2); }
+.btn-formula.active { border-color: var(--accent2); color: var(--accent2); }
+
+/* ══════════════════════════════════════════════════
+   計算式ビュー（#main内）
+══════════════════════════════════════════════════ */
+#formula-view { display: none; }
+#formula-view.show { display: block; }
+.fp-section { margin-bottom: 18px; }
+.fp-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+}
+.fp-row { display: flex; flex-direction: column; gap: 4px; }
+.fp-formula {
+  background: #0a2040;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  color: #c8e6ff;
+  word-break: break-all;
+}
+.fp-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-left: 4px;
+}
+
+/* ══════════════════════════════════════════════════
+   サイドバー（マップ一覧）
+══════════════════════════════════════════════════ */
+#sidebar-header {
+  padding: 12px 14px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+#map-filter {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  margin-top: 8px;
+  outline: none;
+}
+#map-filter:focus { border-color: var(--accent); }
+.map-item {
+  padding: 9px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(42,58,90,.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background .12s;
+}
+.map-item:hover   { background: var(--card); }
+.map-item.active  { background: var(--card); border-left: 3px solid var(--accent); }
+.map-item-name    { font-size: 12px; line-height: 1.4; }
+.map-item-count   { font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-left: 6px; }
+
+/* ══════════════════════════════════════════════════
+   メインエリア
+══════════════════════════════════════════════════ */
+#main-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--accent2);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+#monster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+.placeholder {
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 60px;
+  font-size: 15px;
+  line-height: 2;
+}
+
+/* ══════════════════════════════════════════════════
+   モンスターカード
+══════════════════════════════════════════════════ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform .15s, box-shadow .15s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+.card-header {
+  background: linear-gradient(90deg, #0a2744 0%, #0f3460 100%);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+.card-name  { font-size: 15px; font-weight: bold; color: #fff; }
+.card-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.card-lv-badge {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.card-body { padding: 10px 14px; }
+
+.monster-img-wrap {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.monster-img {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, .25);
+}
+.monster-img-empty {
+  width: 92px;
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: rgba(0, 0, 0, .2);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.monster-img-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  word-break: break-all;
+}
+.monster-img-meta b {
+  color: var(--text);
+  font-size: 12px;
+}
+
+/* ── セクション見出し ── */
+.sec-title {
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 8px 0 4px;
+}
+.sec-title:first-child { margin-top: 0; }
+
+/* ── ステータスグリッド（2×4）── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.stat-cell {
+  background: rgba(0,0,0,.25);
+  border-radius: 5px;
+  padding: 4px 6px;
+  text-align: center;
+}
+.stat-cell .sc-label { font-size: 9px; color: var(--text-muted); display: block; }
+.stat-cell .sc-val   { font-size: 13px; font-weight: bold; color: var(--blue); }
+
+/* ── HP/CP/ATK/DEF バー ── */
+.combat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.combat-cell {
+  background: rgba(0,0,0,.25);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+.combat-cell .cc-label { font-size: 10px; color: var(--text-muted); }
+.combat-cell .cc-val   { font-size: 14px; font-weight: bold; margin-top: 1px; }
+.cc-val.hp  { color: var(--green); }
+.cc-val.cp  { color: var(--blue); }
+.cc-val.atk { color: var(--accent); }
+.cc-val.def { color: var(--yellow); }
+
+/* ── 魔法抵抗バー ── */
+.mag-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.mag-cell {
+  background: rgba(0,0,0,.25);
+  border-radius: 4px;
+  padding: 3px 4px;
+  text-align: center;
+}
+.mag-cell .mg-icon  { font-size: 11px; }
+.mag-cell .mg-val   { font-size: 12px; font-weight: bold; display: block; }
+.mag-neg  { color: #ef9a9a; }
+.mag-pos  { color: #a5d6a7; }
+.mag-zero { color: var(--text-muted); }
+
+/* ── 状態異常 ── */
+.abn-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.abn-pill {
+  background: rgba(0,0,0,.3);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+.abn-pill .ap-lbl { color: var(--text-muted); }
+.abn-pill .ap-val { font-weight: bold; }
+.abn-neg { color: #ef9a9a; }
+.abn-pos { color: #a5d6a7; }
+
+/* ── ドロップ・スキル ── */
+.tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.tag {
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+.tag-drop  { background: #2d2d00; border: 1px solid #666600; color: #ffff99; }
+.tag-skill { background: #002040; border: 1px solid #004080; color: #80c0ff; }
+.tag-map-link {
+  background: #002040; border: 1px solid #004080; color: #80c0ff;
+  cursor: pointer; font-family: inherit; font-size: 11px;
+  padding: 2px 8px; border-radius: 3px; line-height: 1.6;
+  transition: background 0.15s;
+}
+.tag-map-link:hover { background: #003060; border-color: #0060c0; color: #b0d8ff; }
+
+/* ══════════════════════════════════════════════════
+   ローディング
+══════════════════════════════════════════════════ */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-size: 18px;
+  color: var(--text);
+  gap: 16px;
+}
+#loading.hidden { display: none; }
+.spinner {
+  width: 48px; height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════════
+   スクロールバー
+══════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div>データ読み込み中...</div>
+</div>
+
+<div id="layout">
+
+  <!-- ── ヘッダー ── -->
+  <header id="header">
+    <h1>🐉 RED STONE<br><span>モンスター図鑑</span></h1>
+
+    <div id="search-wrap">
+      <label>🔍 モンスター名検索（部分一致）</label>
+      <div id="search-row">
+        <input type="text" id="search-input" placeholder="例：コロッサス、スケルトン…"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+    <div id="lv-wrap">
+      <label>⚔ 計算レベル <span id="lv-auto-hint" style="font-size:10px;color:var(--accent2);margin-left:4px;"></span></label>
+      <div class="lv-row">
+        <input type="number" id="lv-input" value="100" min="1" max="9999">
+        <button class="btn btn-accent2" id="btn-apply-lv">再計算</button>
+        <button class="btn btn-formula" id="btn-formula">計算式</button>
+      </div>
+      <label>🖼 画像確認</label>
+      <div id="img-row">
+        <select id="img-mode" title="SAD候補の仮説切替">
+          <option value="verified_only">verified_only</option>
+          <option value="job2_index">job2_index</option>
+          <option value="image_id_server">image_id_server</option>
+          <option value="image_id_minus_100">image_id_minus_100</option>
+          <option value="image_id_minus_201" selected>image_id_minus_201</option>
+          <option value="group_unknown_4">group_unknown_4</option>
+          <option value="group_imgsum_0">group_imgsum_0</option>
+          <option value="group_imgsum_1">group_imgsum_1</option>
+          <option value="group_imgsum_2">group_imgsum_2</option>
+        </select>
+        <input type="text" id="img-base-path" value="./monster_image" title=".sad(.png) のフォルダ（固定）" readonly>
+        <button class="btn btn-accent" id="btn-apply-img">反映</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── サイドバー ── -->
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      マップ一覧
+      <input type="text" id="map-filter" placeholder="マップ名で絞り込み…">
+      <div style="margin-top:6px;">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:3px;">レベルで絞り込み（±50）</div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input type="number" id="lv-filter" placeholder="例: 150" min="1" max="9999"
+                 style="flex:1;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;outline:none;">
+          <button id="btn-lv-filter-clear" style="padding:4px 9px;border:none;border-radius:4px;cursor:pointer;font-size:11px;background:#2a3a6a;color:var(--text-muted);" title="クリア">✕</button>
+        </div>
+      </div>
+    </div>
+    <div id="map-list"></div>
+  </aside>
+
+  <!-- ── メイン ── -->
+  <main id="main">
+    <div id="main-title">← マップを選択してください</div>
+    <div id="monster-grid">
+      <div class="placeholder">
+        左のマップ一覧からマップを選ぶか、<br>
+        上の検索ボックスでモンスター名を検索してください。
+      </div>
+    </div>
+    <div id="formula-view">
+
+      <div class="fp-section">
+        <div class="fp-title">ステータス（STR / AGI / CON / WIS / INT / CHA / LCK）</div>
+        <div class="fp-row">
+          <div class="fp-formula">stat = floor( 基礎値 × SF/100000 × (Lv−1) + 基礎値 )</div>
+          <div class="fp-note">SF = StatusFactor（種族固定値）</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">MaxHP</div>
+        <div class="fp-row">
+          <div class="fp-formula">MaxHP = floor( lb/10 × Lv + dhp/100 + sb/10 × CON )</div>
+          <div class="fp-note">lb = LevelUpBonus　dhp = DefaultHP　sb = StateBonus</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">MaxCP</div>
+        <div class="fp-row">
+          <div class="fp-formula">MaxCP = floor( lb/10 × Lv + dcp/100 + sb/10 × CHA )</div>
+          <div class="fp-note">dcp = DefaultCP（HP と lb/sb を共有）</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">攻撃力</div>
+        <div class="fp-row">
+          <div class="fp-formula">Atk = ( AtkBonusScale/100 × (Lv−1) + AtkBase ) × ( 1 + STR/200 )</div>
+          <div class="fp-note">上限: bhi/AtkHi　下限: blo/AtkLo　で個別計算</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">防御力</div>
+        <div class="fp-row">
+          <div class="fp-formula">Def = ( db/100 × (Lv−1) + DefBase ) × ( 1 + CON/100 )</div>
+          <div class="fp-note">db = DefenceValueBonus　DefBase = DefenceValue</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">魔法抵抗（火/水/風/土/光/闇）</div>
+        <div class="fp-row">
+          <div class="fp-formula">MagRes[i] = 基礎値[i] + floor( WIS / 30 )</div>
+          <div class="fp-note">WISボーナスは全属性に一律加算（レベル依存あり）</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">状態異常抵抗</div>
+        <div class="fp-row">
+          <div class="fp-formula">AbnRes[i] = 固定値（レベル・ステータス依存なし）</div>
+          <div class="fp-note">全状態異常共通耐性・全呪文耐性・全衰退耐性も同様</div>
+        </div>
+      </div>
+
+      <div class="fp-section">
+        <div class="fp-title">参照元（RedStoneLib）</div>
+        <div class="fp-row">
+          <div class="fp-formula">Actor.cs : SetStatusByLevel()</div>
+          <div class="fp-formula">Breed.cs : struct Breed（328 bytes）</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div><!-- #layout -->
+
+<!-- 生成された各データJSを読み込む -->
+<script src="monster_data.js"></script>
+<script src="skill_data.js"></script>
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════
+   計算ロジック (monster_stat_calc.py の JS 版)
+══════════════════════════════════════════════════ */
+function calcStat(base, sf, lv) {
+  return Math.floor(base * sf / 100000 * (lv - 1) + base);
+}
+
+function calcStats(b, lv) {
+  lv = Math.max(1, lv | 0);
+  const sf  = b.sf;
+  const str = calcStat(b.str, sf, lv);
+  const agi = calcStat(b.agi, sf, lv);
+  const con = calcStat(b.con, sf, lv);
+  const wis = calcStat(b.wis, sf, lv);
+  const int_ = calcStat(b.int, sf, lv);
+  const cha = calcStat(b.cha, sf, lv);
+  const lck = calcStat(b.lck, sf, lv);
+
+  const lv_b = b.lb / 10;
+  const st_b = b.sb / 10;
+  const hp_b = b.dhp / 100;
+  const cp_b = b.dcp / 100;
+  const maxHp = Math.floor(lv_b * lv + hp_b + st_b * con);
+  const maxCp = Math.floor(lv_b * lv + cp_b + st_b * cha);
+
+  const atkHi = (Math.max(b.bhi, b.blo) / 100 * (lv - 1) + Math.max(b.atk_hi, b.atk_lo))
+                * (1 + str / 200);
+  const atkLo = (Math.min(b.bhi, b.blo) / 100 * (lv - 1) + Math.min(b.atk_hi, b.atk_lo))
+                * (1 + str / 200);
+
+  const def = (b.db / 100 * (lv - 1) + b.def) * (1 + con / 100);
+
+  const wisBonus = (wis / 30) | 0;
+  const mag = b.mag.map(v => v + wisBonus);
+
+  return { lv, str, agi, con, wis, int: int_, cha, lck,
+           maxHp, maxCp, atkHi, atkLo, def, mag };
+}
+
+/* ══════════════════════════════════════════════════
+   定数
+══════════════════════════════════════════════════ */
+const MAG_LABELS  = ['🔥火', '💧水', '🌀風', '🌍土', '✨光', '🌑闇'];
+const ABN_LABELS  = ['暗闇','毒','睡眠','冷気','氷結','気絶','石化','混乱','魅了'];
+// ItemBase.ItemType enum より (RedStoneLib/Model/Base/ItemBase.cs)
+const ITEM_TYPE_NAMES = {
+  0:'帽子', 1:'冠', 2:'グローブ', 3:'槍投', 4:'クロー', 5:'手首',
+  6:'ベルト', 7:'靴', 8:'首飾り', 9:'指輪', 10:'耳飾り', 11:'背中',
+  12:'ブローチ', 13:'腕刺青', 14:'肩刺青', 15:'十字架',
+  16:'鎧', 17:'職業鎧',
+  18:'片手剣', 19:'盾', 20:'両手剣', 21:'杖', 22:'牙', 23:'棍棒',
+  24:'翼', 25:'短剣', 26:'弓', 27:'矢', 28:'槍', 29:'笛',
+  30:'スリング', 31:'ボトル', 32:'棒', 33:'鞭',
+  34:'原石', 35:'赤POT', 36:'青POT', 37:'水薬',
+  38:'能力アップ', 39:'異常回復', 40:'復活系', 41:'鍵', 42:'帰還',
+  43:'必殺技の巻物', 44:'お菓子', 45:'霊薬', 46:'魔法液',
+  47:'セッティング原石', 48:'その他特殊', 49:'クエストアイテム',
+  50:'課金アイテム', 51:'エンチャント', 52:'ロト',
+  54:'鎌', 55:'闘士武器', 56:'本',
+};
+function itemName(t) {
+  if (t === 65535) return null;
+  return ITEM_TYPE_NAMES[t] || `アイテム種別#${t}`;
+}
+
+/* ══════════════════════════════════════════════════
+   状態管理
+══════════════════════════════════════════════════ */
+let currentLv       = 100;
+let currentMapId    = null;
+let currentLvFilter = 0;
+let searchTimer     = null;
+let currentImageMode = 'image_id_minus_201';
+const DEFAULT_IMAGE_BASE = './monster_image';
+let currentImageBase = DEFAULT_IMAGE_BASE;
+
+/* ══════════════════════════════════════════════════
+   初期化（scriptがbody末尾のためDOMContentLoaded不要・直接実行）
+══════════════════════════════════════════════════ */
+function init() {
+  try {
+    // monster_data.js が読み込まれていなければエラー
+    if (typeof MONSTER_DATA === 'undefined') {
+      document.getElementById('loading').innerHTML =
+        '<div style="color:#ef5350;font-size:16px;text-align:center;padding:20px;">' +
+        'monster_data.js が見つかりません。<br>' +
+        'まず generate_monster_data.py を実行してください。</div>';
+      return;
+    }
+
+    buildMapList();
+    setupSearch();
+    setupLvControl();
+    setupImageControl();
+    setupFormulaPanel();
+    document.getElementById('loading').classList.add('hidden');
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#ef5350;font-size:14px;text-align:center;padding:20px;max-width:600px;">' +
+      '<b>初期化エラー:</b><br><pre style="text-align:left;background:#111;padding:10px;margin-top:8px;border-radius:4px;overflow:auto;">' +
+      (e.stack || e.message) + '</pre></div>';
+  }
+}
+init();
+
+/* ══════════════════════════════════════════════════
+   サイドバー：マップ一覧
+══════════════════════════════════════════════════ */
+function buildMapList(filter = '') {
+  const el   = document.getElementById('map-list');
+  const maps = MONSTER_DATA.maps;
+  el.innerHTML = '';
+
+  const lf = filter.toLowerCase();
+  maps.forEach(m => {
+    if (lf && !m.name.toLowerCase().includes(lf)) return;
+    if (!m.bids || m.bids.length === 0) return;
+
+    if (currentLvFilter > 0) {
+      const lo = currentLvFilter - 50, hi = currentLvFilter + 50;
+      const hasBreed = MONSTER_DATA.breeds.some(b => {
+        const bm = b.maps.find(mb => mb.mid === m.id);
+        return bm && bm.max >= lo && bm.min <= hi;
+      });
+      if (!hasBreed) return;
+    }
+
+    const item = document.createElement('div');
+    item.className = 'map-item' + (m.id === currentMapId ? ' active' : '');
+    item.innerHTML =
+      `<span class="map-item-name">${escHtml(m.name)}</span>` +
+      `<span class="map-item-count">${m.bids.length}種</span>`;
+    item.addEventListener('click', () => selectMap(m.id));
+    el.appendChild(item);
+  });
+}
+
+document.getElementById('map-filter').addEventListener('input', e => {
+  buildMapList(e.target.value);
+});
+
+document.getElementById('lv-filter').addEventListener('input', e => {
+  const v = parseInt(e.target.value, 10);
+  currentLvFilter = isNaN(v) || v < 1 ? 0 : v;
+  buildMapList(document.getElementById('map-filter').value);
+  if (currentMapId !== null) renderMapMonsters(currentMapId);
+});
+
+document.getElementById('btn-lv-filter-clear').addEventListener('click', () => {
+  document.getElementById('lv-filter').value = '';
+  currentLvFilter = 0;
+  buildMapList(document.getElementById('map-filter').value);
+  if (currentMapId !== null) renderMapMonsters(currentMapId);
+});
+
+/* ══════════════════════════════════════════════════
+   マップ代表レベル自動計算
+══════════════════════════════════════════════════ */
+function calcMapLv(mid) {
+  const entries = [];
+  MONSTER_DATA.breeds.forEach(b => {
+    const bm = b.maps.find(m => m.mid === mid);
+    if (!bm) return;
+    const lo = bm.min || 0, hi = bm.max || lo;
+    if (lo === 0 && hi === 0) return;
+    const midLv = (lo + hi) / 2;
+    entries.push({ midLv, cnt: bm.cnt || 1 });
+  });
+  if (entries.length === 0) return currentLv;
+
+  // cnt加重でビン幅5のヒストグラムを作成し最頻ビンを選択
+  const freq = {};
+  entries.forEach(({ midLv, cnt }) => {
+    const bin = Math.max(1, Math.round(midLv / 5) * 5);
+    freq[bin] = (freq[bin] || 0) + cnt;
+  });
+  let bestBin = 0, bestCnt = 0;
+  Object.entries(freq).forEach(([bin, cnt]) => {
+    if (cnt > bestCnt) { bestCnt = cnt; bestBin = parseInt(bin); }
+  });
+
+  // 最頻ビン内エントリのcnt加重平均レベルを返す
+  const inBin = entries.filter(({ midLv }) => Math.max(1, Math.round(midLv / 5) * 5) === bestBin);
+  const wSum  = inBin.reduce((s, e) => s + e.midLv * e.cnt, 0);
+  const cSum  = inBin.reduce((s, e) => s + e.cnt, 0);
+  return Math.max(1, Math.round(wSum / cSum));
+}
+
+function selectMap(mid) {
+  currentMapId = mid;
+
+  // マップの代表レベルを自動設定
+  const autoLv = calcMapLv(mid);
+  currentLv = autoLv;
+  const inp = document.getElementById('lv-input');
+  inp.value = autoLv;
+  document.getElementById('lv-auto-hint').textContent = `(自動: Lv ${autoLv})`;
+
+  buildMapList(document.getElementById('map-filter').value);
+  renderMapMonsters(mid);
+  hideFormulaView();
+  closeSearch();
+}
+
+/* ══════════════════════════════════════════════════
+   モンスター描画
+══════════════════════════════════════════════════ */
+function renderMapMonsters(mid) {
+  const map     = MONSTER_DATA.maps.find(m => m.id === mid);
+  const grid    = document.getElementById('monster-grid');
+  const title   = document.getElementById('main-title');
+
+  if (!map) { title.textContent = 'マップが見つかりません'; grid.innerHTML = ''; return; }
+
+  title.textContent = `📍 ${map.name}`;
+  grid.innerHTML = '';
+
+  let breeds = MONSTER_DATA.breeds.filter(b =>
+    b.maps.some(bm => bm.mid === mid)
+  );
+
+  if (currentLvFilter > 0) {
+    const lo = currentLvFilter - 50, hi = currentLvFilter + 50;
+    breeds = breeds.filter(b => {
+      const bm = b.maps.find(m => m.mid === mid);
+      return bm && bm.max >= lo && bm.min <= hi;
+    });
+  }
+
+  if (breeds.length === 0) {
+    grid.innerHTML = '<div class="placeholder">このマップにはモンスターがいません。</div>';
+    return;
+  }
+
+  breeds.forEach(b => {
+    const mapInfo = b.maps.find(bm => bm.mid === mid);
+    const lvHint  = mapInfo ? ((mapInfo.min + mapInfo.max) / 2 | 0) || mapInfo.min : currentLv;
+    const lv      = currentLv;
+    grid.appendChild(buildCard(b, lv, mapInfo));
+  });
+}
+
+function renderSingleBreed(bid) {
+  const breed  = MONSTER_DATA.breeds.find(b => b.id === bid);
+  const grid   = document.getElementById('monster-grid');
+  const title  = document.getElementById('main-title');
+  if (!breed) return;
+
+  title.textContent = `🔍 「${breed.name}」の検索結果`;
+  grid.innerHTML = '';
+  grid.appendChild(buildCard(breed, currentLv, null, true));
+}
+
+function countImageCandidatesByMode(mode) {
+  let count = 0;
+  (MONSTER_DATA.breeds || []).forEach((b) => {
+    const sad = mode === 'verified_only'
+      ? (b.img && b.img.verified_sad)
+      : (b.img && b.img.sad_candidates ? b.img.sad_candidates[mode] : null);
+    if (sad) count += 1;
+  });
+  return count;
+}
+
+function pickBestImageMode(modes) {
+  const preferred = [
+    'image_id_minus_201',
+    'image_id_minus_100',
+    'job2_index',
+    'image_id_server',
+    'group_unknown_4',
+    'group_imgsum_0',
+    'group_imgsum_1',
+    'group_imgsum_2',
+    'verified_only',
+  ];
+  for (const m of preferred) {
+    if (modes.includes(m) && countImageCandidatesByMode(m) > 0) return m;
+  }
+  return modes[0] || 'verified_only';
+}
+
+function setupImageControl() {
+  const modeEl = document.getElementById('img-mode');
+  const baseEl = document.getElementById('img-base-path');
+  const btnEl  = document.getElementById('btn-apply-img');
+
+  if (MONSTER_DATA.image_map_meta && Array.isArray(MONSTER_DATA.image_map_meta.hypotheses)) {
+    const options = MONSTER_DATA.image_map_meta.hypotheses;
+    modeEl.innerHTML = options.map((o) => `<option value="${escHtml(o)}">${escHtml(o)}</option>`).join('');
+  }
+
+  const savedMode = localStorage.getItem('monsterViewerImageMode');
+  const allModes = Array.from(modeEl.options).map(o => o.value);
+
+  if (savedMode && allModes.includes(savedMode)) {
+    modeEl.value = savedMode;
+  }
+  // Base path is fixed to workspace-local PNG folder.
+  baseEl.value = DEFAULT_IMAGE_BASE;
+  localStorage.removeItem('monsterViewerImageBase');
+
+  const apply = () => {
+    currentImageMode = modeEl.value;
+    currentImageBase = DEFAULT_IMAGE_BASE;
+    localStorage.setItem('monsterViewerImageMode', currentImageMode);
+    if (currentMapId !== null) {
+      renderMapMonsters(currentMapId);
+    }
+  };
+
+  modeEl.addEventListener('change', apply);
+  btnEl.addEventListener('click', apply);
+  apply();
+}
+
+function sadToPngName(sadName) {
+  if (!sadName) return null;
+  return sadName.replace(/\.sad$/i, '.png');
+}
+
+function toFileUrl(path) {
+  if (!path) return null;
+  let p = path.replace(/\\/g, '/').trim();
+  p = encodeURI(p);
+  if (/^[a-zA-Z]:\//.test(p)) {
+    return 'file:///' + p;
+  }
+  return p;
+}
+
+function buildImageSrcCandidates(pngName) {
+  const candidates = [];
+  // Prefer workspace-local PNG cache first.
+  candidates.push(toFileUrl(`./monster_image/${pngName}`));
+
+  const trimmedBase = (currentImageBase || '').trim().replace(/[\\/]+$/, '');
+  if (trimmedBase && trimmedBase !== './monster_image') {
+    candidates.push(toFileUrl(`${trimmedBase}/${pngName}`));
+  }
+
+  // de-duplicate and drop empties
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function handleMonsterImgError(imgEl) {
+  const srcList = (imgEl.dataset.srcList || '').split('|').filter(Boolean);
+  const cur = parseInt(imgEl.dataset.srcIndex || '0', 10);
+  const next = cur + 1;
+  if (next < srcList.length) {
+    imgEl.dataset.srcIndex = String(next);
+    imgEl.src = srcList[next];
+    return;
+  }
+  imgEl.style.display = 'none';
+  if (imgEl.nextElementSibling) {
+    imgEl.nextElementSibling.style.display = 'flex';
+  }
+}
+
+function resolveMonsterSad(b) {
+  const verified = b.img && b.img.verified_sad ? b.img.verified_sad : null;
+  const candidates = b.img && b.img.sad_candidates ? b.img.sad_candidates : null;
+  const candidateIndex = b.img && b.img.sad_candidate_index ? b.img.sad_candidate_index : null;
+
+  const sad = currentImageMode === 'verified_only'
+    ? verified
+    : (candidates ? (candidates[currentImageMode] || null) : null);
+  const idx = currentImageMode === 'verified_only'
+    ? null
+    : (candidateIndex ? candidateIndex[currentImageMode] : null);
+
+  return {
+    mode: currentImageMode,
+    sad,
+    idx,
+    imageId: b.img && typeof b.img.image_id_server !== 'undefined' ? b.img.image_id_server : null,
+  };
+}
+
+function buildMonsterImageBlock(b) {
+  const info = resolveMonsterSad(b);
+  if (!info.sad) {
+    return `<div class="monster-img-wrap">
+      <div class="monster-img-empty">画像候補なし</div>
+      <div class="monster-img-meta"><b>画像マッピング</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>image_id: ${info.imageId ?? '-'}<br>sad: -</div>
+    </div>`;
+  }
+
+  const png = sadToPngName(info.sad);
+  const srcList = buildImageSrcCandidates(png);
+  const src = srcList[0] || '';
+
+  return `<div class="monster-img-wrap">
+    <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
+         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0"
+         onerror="handleMonsterImgError(this)">
+    <div class="monster-img-empty" style="display:none;">読込失敗</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br>src: ${escHtml(src)}</div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   カード生成
+══════════════════════════════════════════════════ */
+function buildCard(b, lv, mapInfo, showAllMaps = false) {
+  const c   = calcStats(b, lv);
+  const lv1 = lv - 1;
+
+  // レベル帯文字列
+  let lvStr = `Lv ${lv}`;
+  if (mapInfo) {
+    const mn = mapInfo.min, mx = mapInfo.max;
+    lvStr = mn === mx ? `Lv ${mn}` : `Lv ${mn}–${mx}`;
+  }
+
+  // 魔法抵抗
+  const wisBonus = (c.wis / 30) | 0;
+
+  // 状態異常（全表示）
+  const abnPills = b.abn.map((v, i) => {
+    const cls = v > 0 ? 'abn-pos' : v < 0 ? 'abn-neg' : '';
+    return `<span class="abn-pill"><span class="ap-lbl">${ABN_LABELS[i]}:</span><span class="ap-val ${cls}">${v > 0 ? '+' : ''}${v}</span></span>`;
+  }).join('');
+
+  const allAbn = [
+    `<span class="abn-pill"><span class="ap-lbl">異常:</span><span class="ap-val ${b.all_abn>0?'abn-pos':b.all_abn<0?'abn-neg':''}">${b.all_abn>0?'+':''}${b.all_abn}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">低下:</span><span class="ap-val ${b.all_dec>0?'abn-pos':b.all_dec<0?'abn-neg':''}">${b.all_dec>0?'+':''}${b.all_dec}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">呪い:</span><span class="ap-val ${b.all_sp>0?'abn-pos':b.all_sp<0?'abn-neg':''}">${b.all_sp>0?'+':''}${b.all_sp}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">致命打抵抗:</span><span class="ap-val">${b.fatal}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">決定打抵抗:</span><span class="ap-val">${b.dec}</span></span>`,
+  ].join('');
+
+  // ドロップアイテム
+  const drops = (typeof b.drops === 'string' ? JSON.parse(b.drops) : b.drops) || [];
+  const dropTags = drops
+    .map(d => {
+      const n = itemName(d.item_type);
+      if (!n) return '';
+      return `<span class="tag tag-drop">${escHtml(n)} <small>(${(d.prob/100).toFixed(1)}%)</small></span>`;
+    })
+    .filter(Boolean)
+    .join('');
+
+  // スキル
+  const skillTags = (b.skills || []).map(s => {
+    const sname = (typeof SKILL_NAMES !== 'undefined' && SKILL_NAMES[s])
+      ? SKILL_NAMES[s]
+      : `スキル #${s}`;
+    const sad = (typeof SKILL_SAD !== 'undefined' && SKILL_SAD[s]) ? SKILL_SAD[s] : null;
+    const tip = sad ? `#${s}  SAD: ${sad}` : `#${s}`;
+    return `<span class="tag tag-skill" title="${tip}">${escHtml(sname)}</span>`;
+  }).join('');
+
+  // 出現マップ（検索結果表示時）
+  let mapSection = '';
+  if (showAllMaps && b.maps.length > 0) {
+    const mapLines = b.maps.map(bm => {
+      const mp = MONSTER_DATA.maps.find(m => m.id === bm.mid);
+      if (!mp) return '';
+      const lvTxt = bm.min === bm.max ? `Lv ${bm.min}` : `Lv ${bm.min}–${bm.max}`;
+      const popTxt = bm.pop > 0 ? ` / 🔄${bm.pop2 && bm.pop2 !== bm.pop ? bm.pop + '-' + bm.pop2 : bm.pop}秒` : '';
+      const npcLabel = bm.npc ? `${escHtml(bm.npc)} (${escHtml(mp.name)})` : escHtml(mp.name);
+      return `<button class="tag tag-map-link" data-mid="${bm.mid}">${npcLabel} / ${lvTxt} / ${bm.cnt}体${popTxt}</button>`;
+    }).join('');
+    mapSection = `<div class="sec-title">🗺 出現マップ<small style="color:var(--text-muted);margin-left:6px;font-weight:normal">(クリックで移動)</small></div><div class="tag-row">${mapLines}</div>`;
+  }
+
+  // 計算式ヒント
+  const sfHint = `SF=${b.sf} ： stat = floor(基礎値 × ${b.sf}/100000 × ${lv1} + 基礎値)`;
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-header">
+      <div>
+        <div class="card-name">${escHtml(mapInfo && mapInfo.npc ? mapInfo.npc : b.name)}</div>
+        <div class="card-sub">${escHtml(mapInfo && mapInfo.npc ? b.name + ' (' + b.race + ')' : b.race + ' / ' + b.lineage)} &nbsp;|&nbsp; 移動速度:${b.move_spd} &nbsp;攻撃速度:${b.atk_spd}${mapInfo && mapInfo.pop > 0 ? ` &nbsp;|&nbsp; <span title="リポップ速度">🔄 ${mapInfo.pop2 && mapInfo.pop2 !== mapInfo.pop ? mapInfo.pop + '-' + mapInfo.pop2 : mapInfo.pop}秒</span>` : ''}</div>
+      </div>
+      <div class="card-lv-badge">${escHtml(lvStr)}</div>
+    </div>
+    <div class="card-body">
+
+      ${buildMonsterImageBlock(b)}
+
+      <div class="sec-title" title="${escHtml(sfHint)}">📊 ステータス（計算Lv=${lv}）</div>
+      <div class="stat-grid">
+        ${statCell('STR', c.str, b.str)}
+        ${statCell('AGI', c.agi, b.agi)}
+        ${statCell('CON', c.con, b.con)}
+        ${statCell('WIS', c.wis, b.wis)}
+        ${statCell('INT', c.int, b.int)}
+        ${statCell('CHA', c.cha, b.cha)}
+        ${statCell('LCK', c.lck, b.lck)}
+      </div>
+
+      <div class="sec-title">⚔ 戦闘</div>
+      <div class="combat-row">
+        <div class="combat-cell" title="floor(${(b.lb/10).toFixed(2)}×${lv} + ${(b.dhp/100).toFixed(2)} + ${(b.sb/10).toFixed(2)}×${c.con})">
+          <div class="cc-label">MaxHP</div>
+          <div class="cc-val hp">${c.maxHp.toLocaleString()}</div>
+        </div>
+        <div class="combat-cell">
+          <div class="cc-label">MaxCP</div>
+          <div class="cc-val cp">${c.maxCp.toLocaleString()}</div>
+        </div>
+        <div class="combat-cell" title="(Bonus/100×${lv1}+Base)×(1+STR/200)">
+          <div class="cc-label">攻撃力</div>
+          <div class="cc-val atk">${Math.round(c.atkLo)} 〜 ${Math.round(c.atkHi)}</div>
+        </div>
+        <div class="combat-cell" title="(DefBonus/100×${lv1}+DefBase)×(1+CON/100)">
+          <div class="cc-label">防御力</div>
+          <div class="cc-val def">${Math.round(c.def)}</div>
+        </div>
+      </div>
+
+      <div class="sec-title" title="各基礎値 + (WIS // 30) = +${wisBonus}">🛡 魔法抵抗 <small style="color:var(--text-muted)">(WIS${c.wis}÷30=+${wisBonus})</small></div>
+      <div class="mag-row">
+        ${MAG_LABELS.map((lbl, i) => magCell(lbl, c.mag[i])).join('')}
+      </div>
+
+      ${abnPills || allAbn ? `<div class="sec-title">🎲 状態異常抵抗（固定値）</div><div class="abn-wrap">${abnPills}${allAbn}</div>` : ''}
+
+      ${dropTags ? `<div class="sec-title">💰 ドロップ</div><div class="tag-row">${dropTags}</div>` : ''}
+      ${skillTags ? `<div class="sec-title">✨ スキル</div><div class="tag-row">${skillTags}</div>` : ''}
+      ${mapSection}
+    </div>`;
+  card.querySelectorAll('.tag-map-link[data-mid]').forEach(btn => {
+    btn.addEventListener('click', () => selectMap(parseInt(btn.dataset.mid, 10)));
+  });
+  return card;
+}
+
+function statCell(label, val, base) {
+  const tip = `基礎値: ${base}`;
+  return `<div class="stat-cell" title="${tip}">
+    <span class="sc-label">${label}</span>
+    <span class="sc-val">${val}</span>
+  </div>`;
+}
+
+function magCell(label, val) {
+  const cls = val < 0 ? 'mag-neg' : val > 0 ? 'mag-pos' : 'mag-zero';
+  return `<div class="mag-cell">
+    <span class="mg-icon">${label}</span>
+    <span class="mg-val ${cls}">${val > 0 ? '+' : ''}${val}</span>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   検索
+══════════════════════════════════════════════════ */
+function setupSearch() {
+  const inp  = document.getElementById('search-input');
+  const res  = document.getElementById('search-results');
+
+  inp.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = inp.value.trim();
+    if (q.length < 1) { closeSearch(); return; }
+    searchTimer = setTimeout(() => doSearch(q), 150);
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSearch();
+  });
+
+  document.addEventListener('click', e => {
+    if (!res.contains(e.target) && e.target !== inp) closeSearch();
+  });
+}
+
+function doSearch(q) {
+  const res  = document.getElementById('search-results');
+  const hits = MONSTER_DATA.breeds
+    .filter(b => b.name.includes(q))
+    .slice(0, 10);
+
+  if (hits.length === 0) {
+    res.innerHTML = '<div class="search-item" style="color:var(--text-muted)">見つかりませんでした</div>';
+    res.classList.add('show');
+    return;
+  }
+
+  res.innerHTML = hits.map(b => {
+    const mapNames = b.maps.slice(0, 2).map(bm => {
+      const mp = MONSTER_DATA.maps.find(m => m.id === bm.mid);
+      return mp ? mp.name : '';
+    }).filter(Boolean).join(', ');
+    const lvs = b.maps.map(bm => [bm.min, bm.max]).flat().filter(v => v > 0);
+    const lvRange = lvs.length ? `Lv ${Math.min(...lvs)}–${Math.max(...lvs)}` : '';
+    return `<div class="search-item" data-bid="${b.id}">
+      <div>
+        <div class="search-item-name">${escHtml(b.name)}</div>
+        <div class="search-item-meta">${escHtml(b.race)} / ${escHtml(b.lineage)} &nbsp;${escHtml(lvRange)}</div>
+        <div class="search-item-meta">${escHtml(mapNames)}${b.maps.length > 2 ? ` 他${b.maps.length - 2}マップ` : ''}</div>
+      </div>
+      <span style="font-size:11px;color:var(--text-muted)">${b.maps.length}マップ</span>
+    </div>`;
+  }).join('');
+
+  res.querySelectorAll('.search-item[data-bid]').forEach(el => {
+    el.addEventListener('click', () => {
+      const bid = parseInt(el.dataset.bid, 10);
+      closeSearch();
+      document.getElementById('search-input').value = '';
+      currentMapId = null;
+      buildMapList(document.getElementById('map-filter').value);
+      hideFormulaView();
+      renderSingleBreed(bid);
+    });
+  });
+
+  res.classList.add('show');
+}
+
+function closeSearch() {
+  document.getElementById('search-results').classList.remove('show');
+}
+
+/* ══════════════════════════════════════════════════
+   レベル制御
+══════════════════════════════════════════════════ */
+function setupLvControl() {
+  const inp = document.getElementById('lv-input');
+  const btn = document.getElementById('btn-apply-lv');
+
+  const apply = () => {
+    const v = parseInt(inp.value, 10);
+    if (isNaN(v) || v < 1) return;
+    currentLv = v;
+    if (currentMapId !== null) renderMapMonsters(currentMapId);
+  };
+
+  btn.addEventListener('click', () => {
+    document.getElementById('lv-auto-hint').textContent = '';
+    apply();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      document.getElementById('lv-auto-hint').textContent = '';
+      apply();
+    }
+  });
+}
+
+function setupFormulaPanel() {
+  const btn  = document.getElementById('btn-formula');
+  btn.addEventListener('click', () => {
+    const showing = !btn.classList.contains('active');
+    btn.classList.toggle('active', showing);
+    document.getElementById('formula-view').classList.toggle('show', showing);
+    document.getElementById('monster-grid').style.display = showing ? 'none' : '';
+    document.getElementById('main-title').textContent =
+      showing ? '📐 計算式一覧' : (currentMapId !== null ? '' : '← マップを選択してください');
+  });
+}
+
+function hideFormulaView() {
+  const btn = document.getElementById('btn-formula');
+  btn.classList.remove('active');
+  document.getElementById('formula-view').classList.remove('show');
+  document.getElementById('monster-grid').style.display = '';
+}
+
+/* ══════════════════════════════════════════════════
+   ユーティリティ
+══════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
