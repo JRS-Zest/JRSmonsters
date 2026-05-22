@@ -688,6 +688,12 @@ const DEFAULT_IMAGE_MODE = 'effect_id_minus_201';
 let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
+const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
+
+function isMapExcludedByName(mapName) {
+  if (!mapName) return false;
+  return EXCLUDED_MAP_NAME_KEYWORDS.some((kw) => mapName.includes(kw));
+}
 
 /* ══════════════════════════════════════════════════
    初期化（scriptがbody末尾のためDOMContentLoaded不要・直接実行）
@@ -728,6 +734,7 @@ function buildMapList(filter = '') {
 
   const lf = filter.toLowerCase();
   maps.forEach(m => {
+    if (isMapExcludedByName(m.name)) return;
     if (lf && !m.name.toLowerCase().includes(lf)) return;
     if (!m.bids || m.bids.length === 0) return;
 
@@ -802,6 +809,9 @@ function calcMapLv(mid) {
 }
 
 function selectMap(mid) {
+  const map = MONSTER_DATA.maps.find(m => m.id === mid);
+  if (!map || isMapExcludedByName(map.name)) return;
+
   currentMapId = mid;
 
   // マップの代表レベルを自動設定
@@ -826,6 +836,11 @@ function renderMapMonsters(mid) {
   const title   = document.getElementById('main-title');
 
   if (!map) { title.textContent = 'マップが見つかりません'; grid.innerHTML = ''; return; }
+  if (isMapExcludedByName(map.name)) {
+    title.textContent = '除外マップです';
+    grid.innerHTML = '<div class="placeholder">このマップは除外対象です。</div>';
+    return;
+  }
 
   title.textContent = `📍 ${map.name}`;
   grid.innerHTML = '';
