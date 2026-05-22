@@ -184,6 +184,14 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
 }
 .btn-speed:hover { background: var(--card); border-color: var(--accent2); }
 .btn-speed.active { border-color: var(--accent2); color: var(--accent2); }
+.btn-play {
+  background: #2a3a6a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.btn-play:hover { background: var(--card); border-color: var(--accent2); }
 
 /* ══════════════════════════════════════════════════
    計算式ビュー（#main内）
@@ -1067,8 +1075,12 @@ function handleMonsterImgLoad(imgEl) {
 function setMonsterImgPlayTag(imgEl, isPlaying) {
   const wrap = imgEl ? imgEl.closest('.monster-img-wrap') : null;
   const playEl = wrap ? wrap.querySelector('.js-play-tag') : null;
+  const playBtn = wrap ? wrap.querySelector('.js-play-btn') : null;
   if (playEl) {
     playEl.textContent = isPlaying ? '再生中' : '停止中';
+  }
+  if (playBtn) {
+    playBtn.textContent = isPlaying ? '停止' : '再生';
   }
 }
 
@@ -1130,6 +1142,14 @@ function toggleMonsterImgAnimation(imgEl) {
   }
 }
 window.toggleMonsterImgAnimation = toggleMonsterImgAnimation;
+
+function toggleMonsterImgAnimationByButton(btnEl) {
+  const wrap = btnEl ? btnEl.closest('.monster-img-wrap') : null;
+  const imgEl = wrap ? wrap.querySelector('.monster-img') : null;
+  if (!imgEl) return;
+  toggleMonsterImgAnimation(imgEl);
+}
+window.toggleMonsterImgAnimationByButton = toggleMonsterImgAnimationByButton;
 
 function handleMonsterImgError(imgEl) {
   const srcList = (imgEl.dataset.srcList || '').split('|').filter(Boolean);
@@ -1204,14 +1224,13 @@ function buildMonsterImageBlock(b) {
 
   return `<div class="monster-img-wrap">
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
-         title="画像クリックで再生/停止"
+         title="再生はボタンで操作"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
          data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-animating="0" data-failed-variant-hops="0"
-         onclick="toggleMonsterImgAnimation(this)"
           onload="handleMonsterImgLoad(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
-    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><span class="js-play-tag">停止中</span><br><span class="js-speed-tag">再生速度: ${escHtml(playbackSpeedText)}</span><br>src: ${escHtml(src)}</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><button class="btn btn-play js-play-btn" type="button" onclick="toggleMonsterImgAnimationByButton(this)">再生</button> <span class="js-play-tag">停止中</span><br><span class="js-speed-tag">再生速度: ${escHtml(playbackSpeedText)}</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
 
