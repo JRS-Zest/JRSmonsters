@@ -690,10 +690,44 @@ const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
 const MAP_FILTER_VERSION = 'guildhall-hide-v2';
+const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
 
 function isMapExcludedByName(mapName) {
   if (!mapName) return false;
   return EXCLUDED_MAP_NAME_KEYWORDS.some((kw) => mapName.includes(kw));
+}
+
+function isFamilyMapName(mapName) {
+  if (!mapName) return false;
+  return MAP_FAMILY_KEYWORDS.some((kw) => mapName.includes(kw));
+}
+
+function normalizeFamilyMapName(mapName) {
+  if (!mapName) return '';
+  return mapName
+    .replace(/(超級|ミラー)\s*\d*/g, '$1')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function pickRepresentativeMap(a, b) {
+  const al = (a.name || '').length;
+  const bl = (b.name || '').length;
+  if (al !== bl) return al < bl ? a : b;
+  return a.id <= b.id ? a : b;
+}
+
+function getVisibleMaps(allMaps) {
+  const byKey = new Map();
+  allMaps.forEach((m) => {
+    if (isMapExcludedByName(m.name)) return;
+    const key = isFamilyMapName(m.name)
+      ? `family:${normalizeFamilyMapName(m.name)}`
+      : `id:${m.id}`;
+    const cur = byKey.get(key);
+    byKey.set(key, cur ? pickRepresentativeMap(cur, m) : m);
+  });
+  return Array.from(byKey.values()).sort((a, b) => a.id - b.id);
 }
 
 /* ══════════════════════════════════════════════════
@@ -730,12 +764,11 @@ init();
 ══════════════════════════════════════════════════ */
 function buildMapList(filter = '') {
   const el   = document.getElementById('map-list');
-  const maps = MONSTER_DATA.maps;
+  const maps = getVisibleMaps(MONSTER_DATA.maps);
   el.innerHTML = '';
 
   const lf = filter.toLowerCase();
   maps.forEach(m => {
-    if (isMapExcludedByName(m.name)) return;
     if (lf && !m.name.toLowerCase().includes(lf)) return;
     if (!m.bids || m.bids.length === 0) return;
 
