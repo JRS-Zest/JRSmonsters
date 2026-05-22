@@ -1151,22 +1151,15 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
   const len = variantPngs.length;
   const idx = ((variantIndex % len) + len) % len;
   const pngName = variantPngs[idx];
-  const srcList = buildImageSrcCandidates(pngName);
-  const src = srcList[0] || '';
+  const src = toFileUrl(`${DEFAULT_IMAGE_BASE}/${pngName}`);
   if (!src) return;
 
   imgEl.dataset.variantIndex = String(idx);
-  imgEl.dataset.srcList = srcList.join('|');
-  const preferredSrcIndex = parseInt(imgEl.dataset.preferredSrcIndex || '0', 10);
-  const initialSrcIndex = Number.isFinite(preferredSrcIndex) && preferredSrcIndex >= 0 && preferredSrcIndex < srcList.length
-    ? preferredSrcIndex
-    : 0;
-  imgEl.dataset.srcIndex = String(initialSrcIndex);
   imgEl.style.display = '';
   if (imgEl.nextElementSibling) {
     imgEl.nextElementSibling.style.display = 'none';
   }
-  imgEl.src = srcList[initialSrcIndex] || src;
+  imgEl.src = src;
 
   const wrap = imgEl.closest('.monster-img-wrap');
   const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
@@ -1178,10 +1171,7 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
 function handleMonsterImgLoad(imgEl) {
   if (!imgEl) return;
   imgEl.dataset.failedVariantHops = '0';
-  const curSrcIndex = parseInt(imgEl.dataset.srcIndex || '0', 10);
-  if (Number.isFinite(curSrcIndex) && curSrcIndex >= 0) {
-    imgEl.dataset.preferredSrcIndex = String(curSrcIndex);
-  }
+  imgEl.dataset.missStreak = '0';
 
   if (imgEl.dataset.animating === '1' && imgEl.dataset.awaitingPlayStart === '1') {
     imgEl.dataset.awaitingPlayStart = '0';
@@ -1289,24 +1279,16 @@ function toggleMonsterImgAnimationByButton(btnEl) {
 window.toggleMonsterImgAnimationByButton = toggleMonsterImgAnimationByButton;
 
 function handleMonsterImgError(imgEl) {
-  const srcList = (imgEl.dataset.srcList || '').split('|').filter(Boolean);
-  const cur = parseInt(imgEl.dataset.srcIndex || '0', 10);
-  const next = cur + 1;
-  if (next < srcList.length) {
-    imgEl.dataset.srcIndex = String(next);
-    imgEl.src = srcList[next];
-    return;
-  }
-
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
+  if (variantPngs.length === 0) return;
   const curVariant = parseInt(imgEl.dataset.variantIndex || '0', 10);
-  const hops = parseInt(imgEl.dataset.failedVariantHops || '0', 10);
-  if (variantPngs.length > 1 && hops < variantPngs.length - 1) {
-    imgEl.dataset.failedVariantHops = String(hops + 1);
+  const missStreak = parseInt(imgEl.dataset.missStreak || '0', 10) + 1;
+  if (missStreak < variantPngs.length) {
+    imgEl.dataset.missStreak = String(missStreak);
     applyMonsterImgVariant(imgEl, curVariant + 1);
     return;
   }
-  imgEl.dataset.failedVariantHops = '0';
+  imgEl.dataset.missStreak = '0';
 
   imgEl.style.display = 'none';
   if (imgEl.nextElementSibling) {
@@ -1343,11 +1325,8 @@ function buildMonsterImageBlock(b) {
   const png = sadToPngName(info.sad);
   const variantPngs = png ? buildFrameVariantPngNames(png) : [];
   const initialVariantIndex = getInitialVariantIndex(variantPngs);
-  const srcList = variantPngs.length > 0
-    ? buildImageSrcCandidates(variantPngs[initialVariantIndex])
-    : [];
-  const src = srcList[0] || '';
   const initialPngName = variantPngs[initialVariantIndex] || '';
+  const src = initialPngName ? toFileUrl(`${DEFAULT_IMAGE_BASE}/${initialPngName}`) : '';
   const initialFrameTag = formatFrameTagText(initialPngName, initialVariantIndex, variantPngs.length);
   const playbackSpeedText = formatPlaybackSpeedText();
 
@@ -1363,7 +1342,7 @@ function buildMonsterImageBlock(b) {
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
          title="再生はボタンで操作"
          data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-         data-src-list="${escHtml(srcList.join('|'))}" data-src-index="0" data-preferred-src-index="0" data-animating="0" data-awaiting-play-start="0" data-failed-variant-hops="0"
+          data-animating="0" data-awaiting-play-start="0" data-miss-streak="0" data-failed-variant-hops="0"
           onload="handleMonsterImgLoad(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
