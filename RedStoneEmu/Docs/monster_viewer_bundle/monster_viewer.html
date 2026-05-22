@@ -1107,6 +1107,12 @@ function setMonsterImgPlayTag(imgEl, isPlaying) {
   }
 }
 
+function formatPlaybackSpeedText() {
+  const sec = (MONSTER_IMG_ANIM_INTERVAL_MS / 1000).toFixed(2);
+  const fps = (1000 / MONSTER_IMG_ANIM_INTERVAL_MS).toFixed(1);
+  return `${sec}秒/コマ (${fps}fps)`;
+}
+
 function stopMonsterImgAnimation(imgEl = null) {
   const target = imgEl || activeMonsterImgEl;
   if (activeMonsterImgTimer && (!imgEl || target === activeMonsterImgEl)) {
@@ -1218,6 +1224,7 @@ function buildMonsterImageBlock(b) {
   const src = srcList[0] || '';
   const initialPngName = variantPngs[initialVariantIndex] || '';
   const initialFrameTag = formatFrameTagText(initialPngName, initialVariantIndex, variantPngs.length);
+  const playbackSpeedText = formatPlaybackSpeedText();
 
   if (!src) {
     const emptyLabel = info.sad ? '画像未配布' : '画像候補なし';
@@ -1235,7 +1242,7 @@ function buildMonsterImageBlock(b) {
          onclick="toggleMonsterImgAnimation(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
-    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><span class="js-play-tag">停止中</span><br>src: ${escHtml(src)}</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><span class="js-play-tag">停止中</span><br><span class="js-speed-tag">再生速度: ${escHtml(playbackSpeedText)}</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
 
