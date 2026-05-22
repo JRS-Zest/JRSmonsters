@@ -689,7 +689,7 @@ let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
-const MAP_FILTER_VERSION = 'guildhall-hide-v5';
+const MAP_FILTER_VERSION = 'guildhall-hide-v6';
 const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
 
 function isMapExcludedByName(mapName) {
@@ -730,7 +730,7 @@ function isOriginalVariantMapName(mapName) {
 
 function getSuperVariantNumber(mapName) {
   const n = normalizeMapName(mapName);
-  const m = /超級[+\-−－ー―‐]?(\d+)/.exec(n);
+  const m = /超級(?:ミラー)?[+\-−－ー―‐]?(\d+)/.exec(n);
   if (!m) return null;
   const v = parseInt(m[1], 10);
   return Number.isFinite(v) ? v : null;
