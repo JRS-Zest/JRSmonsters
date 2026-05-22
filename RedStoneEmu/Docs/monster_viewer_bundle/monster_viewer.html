@@ -689,7 +689,7 @@ let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
-const MAP_FILTER_VERSION = 'guildhall-hide-v6';
+const MAP_FILTER_VERSION = 'guildhall-hide-v7';
 const MAP_FAMILY_KEYWORDS = ['超級', 'ミラー'];
 
 function isMapExcludedByName(mapName) {
@@ -723,6 +723,14 @@ function isMirrorVariantMapName(mapName) {
   return /ミラー/.test(n);
 }
 
+function getMirrorVariantNumber(mapName) {
+  const n = normalizeMapName(mapName);
+  const m = /ミラー[+\-−－ー―‐]?(\d+)/.exec(n);
+  if (!m) return null;
+  const v = parseInt(m[1], 10);
+  return Number.isFinite(v) ? v : null;
+}
+
 function isOriginalVariantMapName(mapName) {
   const n = normalizeMapName(mapName);
   return /オリジナル/.test(n);
@@ -746,6 +754,14 @@ function pickRepresentativeMap(a, b) {
   const bm = isMirrorVariantMapName(b.name);
   // Keep base map when both belong to the same family.
   if (am !== bm) return am ? b : a;
+
+  const an = getMirrorVariantNumber(a.name);
+  const bn = getMirrorVariantNumber(b.name);
+  // For ミラー variants, keep ミラー1 when present.
+  if (an === 1 && bn !== 1) return a;
+  if (bn === 1 && an !== 1) return b;
+  // Otherwise keep the smaller mirror variant number.
+  if (an !== null && bn !== null && an !== bn) return an < bn ? a : b;
 
   const as = getSuperVariantNumber(a.name);
   const bs = getSuperVariantNumber(b.name);
