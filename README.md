@@ -1,2 +1,2 @@
 # JRSmonsters
-Jolt Ruin Strike
+Junkie's Rapid Surge
