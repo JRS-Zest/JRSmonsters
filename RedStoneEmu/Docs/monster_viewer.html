@@ -959,16 +959,6 @@ function sadToPngName(sadName) {
   return sadName.replace(/\.sad$/i, '.png');
 }
 
-const PNG_ALIAS_MAP = {
-  // Some SAD names in data have no distributable PNG; map them to a visible fallback.
-  'insectswarm.png': 'Spider.png',
-};
-
-function resolveAliasPngName(pngName) {
-  if (!pngName) return pngName;
-  return PNG_ALIAS_MAP[pngName.toLowerCase()] || pngName;
-}
-
 function toFileUrl(path) {
   if (!path) return null;
   let p = path.replace(/\\/g, '/').trim();
@@ -981,9 +971,7 @@ function toFileUrl(path) {
 
 function buildImageSrcCandidates(pngName) {
   const candidates = [];
-  const aliased = resolveAliasPngName(pngName);
   const nameVariants = [pngName];
-  if (aliased && aliased !== pngName) nameVariants.push(aliased);
   const lower = typeof pngName === 'string' ? pngName.toLowerCase() : pngName;
   const upper = typeof pngName === 'string' ? pngName.toUpperCase() : pngName;
   if (lower && lower !== pngName) nameVariants.push(lower);
@@ -1040,55 +1028,19 @@ function resolveMonsterSad(b) {
   };
 }
 
-function buildMonsterPngCandidates(b, primarySad = null) {
-  const out = [];
-  const pushSad = (sad) => {
-    const png = sadToPngName(sad);
-    if (png) out.push(png);
-  };
-
-  pushSad(primarySad);
-
-  const c = b.img && b.img.sad_candidates ? b.img.sad_candidates : {};
-  const order = [
-    'effect_id_minus_201',
-    'image_id_minus_201',
-    'image_id_minus_100',
-    'job2_index',
-    'image_id_server',
-    'creature_name_match',
-    'group_unknown_4',
-    'group_imgsum_0',
-    'group_imgsum_1',
-    'group_imgsum_2',
-  ];
-
-  if (currentImageMode === 'verified_only') {
-    pushSad(b.img && b.img.verified_sad ? b.img.verified_sad : null);
-  } else {
-    pushSad(c[currentImageMode]);
-  }
-
-  order.forEach((m) => pushSad(c[m]));
-  pushSad(b.img && b.img.verified_sad ? b.img.verified_sad : null);
-
-  return Array.from(new Set(out));
-}
-
 function buildMonsterImageBlock(b) {
   const info = resolveMonsterSad(b);
-  const pngCandidates = buildMonsterPngCandidates(b, info.sad);
-  const srcList = pngCandidates.flatMap((pngName) => buildImageSrcCandidates(pngName));
+  const png = sadToPngName(info.sad);
+  const srcList = png ? buildImageSrcCandidates(png) : [];
   const src = srcList[0] || '';
 
   if (!src) {
+    const emptyLabel = info.sad ? '画像未配布' : '画像候補なし';
     return `<div class="monster-img-wrap">
-      <div class="monster-img-empty">画像候補なし</div>
+      <div class="monster-img-empty">${emptyLabel}</div>
       <div class="monster-img-meta"><b>画像マッピング</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>image_id: ${info.imageId ?? '-'}<br>sad: ${escHtml(info.sad || '-')}</div>
     </div>`;
   }
-
-  const png = sadToPngName(info.sad) || pngCandidates[0] || '-';
 
   return `<div class="monster-img-wrap">
     <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
