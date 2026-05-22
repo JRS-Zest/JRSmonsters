@@ -1021,6 +1021,14 @@ function getInitialVariantIndex(variantPngs) {
   return variantPngs.length > 1 ? 1 : 0;
 }
 
+function formatFrameTagText(pngName, idx, len) {
+  const labels = ['-10', '0', '+10'];
+  const fnum = extractFrameNumber(pngName);
+  return fnum === null
+    ? `frame: ${labels[idx] || idx}`
+    : `frame: ${fnum + 1}/${len} (#${fnum})`;
+}
+
 function toFileUrl(path) {
   if (!path) return null;
   let p = path.replace(/\\/g, '/').trim();
@@ -1076,19 +1084,15 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
   }
   imgEl.src = src;
 
-  const labels = ['-10', '0', '+10'];
   const wrap = imgEl.closest('.monster-img-wrap');
   const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
   if (tagEl) {
-    const fnum = extractFrameNumber(pngName);
-    tagEl.textContent = fnum === null
-      ? `frame: ${labels[idx] || idx}`
-      : `frame: ${fnum + 1}/${len} (#${fnum})`;
+    tagEl.textContent = formatFrameTagText(pngName, idx, len);
   }
 }
 
 function cycleMonsterImgVariant(imgEl) {
-  const cur = parseInt(imgEl.dataset.variantIndex || '1', 10);
+  const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
   applyMonsterImgVariant(imgEl, cur + 1);
 }
 window.cycleMonsterImgVariant = cycleMonsterImgVariant;
@@ -1138,6 +1142,8 @@ function buildMonsterImageBlock(b) {
     ? buildImageSrcCandidates(variantPngs[initialVariantIndex])
     : [];
   const src = srcList[0] || '';
+  const initialPngName = variantPngs[initialVariantIndex] || '';
+  const initialFrameTag = formatFrameTagText(initialPngName, initialVariantIndex, variantPngs.length);
 
   if (!src) {
     const emptyLabel = info.sad ? '画像未配布' : '画像候補なし';
@@ -1155,7 +1161,7 @@ function buildMonsterImageBlock(b) {
          onclick="cycleMonsterImgVariant(this)"
          onerror="handleMonsterImgError(this)">
     <div class="monster-img-empty" style="display:none;">読込失敗</div>
-    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">frame: 0</span><br>src: ${escHtml(src)}</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
 
