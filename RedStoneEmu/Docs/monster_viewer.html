@@ -330,25 +330,32 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
   margin-bottom: 8px;
   align-items: center;
 }
-.monster-img {
-  width: 92px;
-  height: 92px;
-  box-sizing: border-box;
-  padding: 4px;
-  object-fit: contain;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, .25);
-}
-.monster-img-empty {
+.monster-img-frame {
   width: 92px;
   height: 92px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
   border-radius: 8px;
-  border: 1px dashed var(--border);
-  background: rgba(0, 0, 0, .2);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, .25);
+}
+.monster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  background: transparent;
+}
+.monster-img-frame .monster-img-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-muted);
   font-size: 11px;
 }
@@ -1232,19 +1239,21 @@ function buildMonsterImageBlock(b) {
   if (!src) {
     const emptyLabel = info.sad ? '画像未配布' : '画像候補なし';
     return `<div class="monster-img-wrap">
-      <div class="monster-img-empty">${emptyLabel}</div>
+      <div class="monster-img-frame"><div class="monster-img-empty">${emptyLabel}</div></div>
       <div class="monster-img-meta"><b>画像マッピング</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>image_id: ${info.imageId ?? '-'}<br>sad: ${escHtml(info.sad || '-')}</div>
     </div>`;
   }
 
   return `<div class="monster-img-wrap">
-    <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
-         title="再生はボタンで操作"
-         data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-         data-animating="0" data-miss-streak="0" data-failed-variant-hops="0"
-          onload="handleMonsterImgLoad(this)"
-         onerror="handleMonsterImgError(this)">
-    <div class="monster-img-empty" style="display:none;">読込失敗</div>
+    <div class="monster-img-frame">
+      <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
+           title="再生はボタンで操作"
+           data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
+           data-animating="0" data-miss-streak="0" data-failed-variant-hops="0"
+            onload="handleMonsterImgLoad(this)"
+           onerror="handleMonsterImgError(this)">
+      <div class="monster-img-empty" style="display:none;">読込失敗</div>
+    </div>
     <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><button class="btn btn-play js-play-btn" type="button" onclick="toggleMonsterImgAnimationByButton(this)">再生</button> <span class="js-play-tag">停止中</span><br><span class="js-speed-tag">再生速度: ${escHtml(playbackSpeedText)}</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
