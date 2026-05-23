@@ -583,7 +583,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
     <div id="formula-view">
 
       <div class="fp-section">
-        <div class="fp-title">ステータス（STR / AGI / CON / WIS / INT / CHA / LCK）</div>
+        <div class="fp-title">ステータス（力 / 敏捷 / 健康 / 知恵 / 知識 / 威厳 / 運）</div>
         <div class="fp-row">
           <div class="fp-formula">stat = floor( 基礎値 × SF/100000 × (Lv−1) + 基礎値 )</div>
           <div class="fp-note">SF = StatusFactor（種族固定値）</div>
@@ -1457,13 +1457,13 @@ function buildCard(b, lv, mapInfo, showAllMaps = false) {
 
       <div class="sec-title" title="${escHtml(sfHint)}">📊 ステータス（計算Lv=${lv}）</div>
       <div class="stat-grid">
-        ${statCell('STR', c.str, b.str)}
-        ${statCell('AGI', c.agi, b.agi)}
-        ${statCell('CON', c.con, b.con)}
-        ${statCell('WIS', c.wis, b.wis)}
-        ${statCell('INT', c.int, b.int)}
-        ${statCell('CHA', c.cha, b.cha)}
-        ${statCell('LCK', c.lck, b.lck)}
+        ${statCell('力', c.str, b.str)}
+        ${statCell('敏捷', c.agi, b.agi)}
+        ${statCell('健康', c.con, b.con)}
+        ${statCell('知恵', c.wis, b.wis)}
+        ${statCell('知識', c.int, b.int)}
+        ${statCell('威厳', c.cha, b.cha)}
+        ${statCell('運', c.lck, b.lck)}
       </div>
 
       <div class="sec-title">⚔ 戦闘</div>
