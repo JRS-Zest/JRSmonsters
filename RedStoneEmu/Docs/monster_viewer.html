@@ -1160,7 +1160,7 @@ function setMonsterImgPlayTag(imgEl, state) {
 }
 
 function formatPlaybackSpeedText() {
-  const sec = (monsterImgAnimIntervalMs / 1000).toFixed(2);
+  const sec = (monsterImgAnimIntervalMs / 1000).toFixed(3);
   const fps = monsterImgAnimFps.toFixed(1);
   return `${sec}秒/コマ (${fps}fps)`;
 }
