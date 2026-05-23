@@ -693,7 +693,7 @@ function calcStats(b, lv) {
    定数
 ══════════════════════════════════════════════════ */
 const MAG_LABELS  = ['🔥火', '💧水', '🌀風', '🌍土', '✨光', '🌑闇'];
-const ABN_LABELS  = ['暗闇','毒','睡眠','冷気','氷結','気絶','石化','混乱','魅了'];
+const ABN_LABELS  = ['暗闇','毒','睡眠','コールド','フリーズ','スタン','石化','混乱','魅了'];
 // ItemBase.ItemType enum より (RedStoneLib/Model/Base/ItemBase.cs)
 const ITEM_TYPE_NAMES = {
   0:'帽子', 1:'冠', 2:'グローブ', 3:'槍投', 4:'クロー', 5:'手首',
@@ -1399,8 +1399,8 @@ function buildCard(b, lv, mapInfo, showAllMaps = false) {
     `<span class="abn-pill"><span class="ap-lbl">異常:</span><span class="ap-val ${b.all_abn>0?'abn-pos':b.all_abn<0?'abn-neg':''}">${b.all_abn>0?'+':''}${b.all_abn}</span></span>`,
     `<span class="abn-pill"><span class="ap-lbl">低下:</span><span class="ap-val ${b.all_dec>0?'abn-pos':b.all_dec<0?'abn-neg':''}">${b.all_dec>0?'+':''}${b.all_dec}</span></span>`,
     `<span class="abn-pill"><span class="ap-lbl">呪い:</span><span class="ap-val ${b.all_sp>0?'abn-pos':b.all_sp<0?'abn-neg':''}">${b.all_sp>0?'+':''}${b.all_sp}</span></span>`,
-    `<span class="abn-pill"><span class="ap-lbl">致命打抵抗:</span><span class="ap-val">${b.fatal}</span></span>`,
-    `<span class="abn-pill"><span class="ap-lbl">決定打抵抗:</span><span class="ap-val">${b.dec}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">致命打:</span><span class="ap-val">${b.fatal}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">決定打:</span><span class="ap-val">${b.dec}</span></span>`,
   ].join('');
 
   // ドロップアイテム
