@@ -547,9 +547,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
     <div id="speed-wrap">
       <label>🎞 フレーム速度</label>
       <div class="speed-row">
-        <button class="btn btn-speed js-anim-speed-btn" data-anim-ms="16" title="約60fps">速い</button>
-        <button class="btn btn-speed js-anim-speed-btn" data-anim-ms="100" title="10fps">標準</button>
-        <button class="btn btn-speed js-anim-speed-btn" data-anim-ms="125" title="8fps">ゆっくり</button>
+        <button class="btn btn-speed js-anim-speed-btn" data-anim-fps="50" title="50fps">50fps</button>
+        <button class="btn btn-speed js-anim-speed-btn" data-anim-fps="40" title="40fps">40fps</button>
+        <button class="btn btn-speed js-anim-speed-btn" data-anim-fps="30" title="30fps">30fps</button>
       </div>
     </div>
   </header>
@@ -734,8 +734,9 @@ const DEFAULT_IMAGE_MODE = 'effect_id_minus_201';
 let currentImageMode = DEFAULT_IMAGE_MODE;
 const DEFAULT_IMAGE_BASE = './monster_image';
 let frameCountLowerMap = null;
-const DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS = 100;
-let monsterImgAnimIntervalMs = DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS;
+const DEFAULT_MONSTER_IMG_ANIM_FPS = 40;
+let monsterImgAnimFps = DEFAULT_MONSTER_IMG_ANIM_FPS;
+let monsterImgAnimIntervalMs = 1000 / monsterImgAnimFps;
 let activeMonsterImgTimer = null;
 let activeMonsterImgEl = null;
 const MONSTER_IMG_PREFETCH_AHEAD = 8;
@@ -1038,12 +1039,21 @@ function setupPlaybackSpeedControls() {
   const buttons = Array.from(document.querySelectorAll('.js-anim-speed-btn'));
   if (buttons.length === 0) return;
 
-  const applySpeed = (ms) => {
-    if (!Number.isFinite(ms) || ms <= 0) return;
-    monsterImgAnimIntervalMs = ms;
+  const parseButtonFps = (btn) => {
+    const fps = parseFloat(btn.dataset.animFps || '0');
+    if (Number.isFinite(fps) && fps > 0) return fps;
+    const ms = parseFloat(btn.dataset.animMs || '0');
+    if (Number.isFinite(ms) && ms > 0) return 1000 / ms;
+    return 0;
+  };
+
+  const applySpeed = (fps) => {
+    if (!Number.isFinite(fps) || fps <= 0) return;
+    monsterImgAnimFps = fps;
+    monsterImgAnimIntervalMs = 1000 / fps;
     buttons.forEach((btn) => {
-      const v = parseInt(btn.dataset.animMs || '0', 10);
-      btn.classList.toggle('active', v === monsterImgAnimIntervalMs);
+      const v = parseButtonFps(btn);
+      btn.classList.toggle('active', Math.abs(v - monsterImgAnimFps) < 0.001);
     });
     const speedText = `再生速度: ${formatPlaybackSpeedText()}`;
     document.querySelectorAll('.js-speed-tag').forEach((el) => {
@@ -1057,12 +1067,12 @@ function setupPlaybackSpeedControls() {
 
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      const ms = parseInt(btn.dataset.animMs || '0', 10);
-      applySpeed(ms);
+      const fps = parseButtonFps(btn);
+      applySpeed(fps);
     });
   });
 
-  applySpeed(DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS);
+  applySpeed(DEFAULT_MONSTER_IMG_ANIM_FPS);
 }
 
 function sadToPngName(sadName) {
@@ -1243,7 +1253,7 @@ function setMonsterImgPlayTag(imgEl, state) {
 
 function formatPlaybackSpeedText() {
   const sec = (monsterImgAnimIntervalMs / 1000).toFixed(2);
-  const fps = (1000 / monsterImgAnimIntervalMs).toFixed(1);
+  const fps = monsterImgAnimFps.toFixed(1);
   return `${sec}秒/コマ (${fps}fps)`;
 }
 
