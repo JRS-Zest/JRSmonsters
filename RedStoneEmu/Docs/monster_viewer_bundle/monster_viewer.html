@@ -1097,8 +1097,8 @@ function getStopVariantIndex(variantPngs) {
   if (!variantPngs || variantPngs.length === 0) return 0;
   const frameVariant = extractFrameNumber(variantPngs[0]);
   if (frameVariant !== null) {
-    // Keep the historical idle facing frame when not playing.
-    return Math.min(157, variantPngs.length - 1);
+    // Prefer the down-left facing frame when not playing.
+    return Math.min(42, variantPngs.length - 1);
   }
   return variantPngs.length > 1 ? 1 : 0;
 }
