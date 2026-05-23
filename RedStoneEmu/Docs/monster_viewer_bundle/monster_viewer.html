@@ -1279,6 +1279,17 @@ window.toggleMonsterImgAnimationByButton = toggleMonsterImgAnimationByButton;
 function handleMonsterImgError(imgEl) {
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
   if (variantPngs.length === 0) return;
+
+  const isAnimating = imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl;
+  if (!isAnimating) {
+    imgEl.dataset.missStreak = '0';
+    imgEl.style.display = 'none';
+    if (imgEl.nextElementSibling) {
+      imgEl.nextElementSibling.style.display = 'flex';
+    }
+    return;
+  }
+
   const curVariant = parseInt(imgEl.dataset.variantIndex || '0', 10);
   const missStreak = parseInt(imgEl.dataset.missStreak || '0', 10) + 1;
   if (missStreak < variantPngs.length) {
@@ -1292,9 +1303,7 @@ function handleMonsterImgError(imgEl) {
   if (imgEl.nextElementSibling) {
     imgEl.nextElementSibling.style.display = 'flex';
   }
-  if (imgEl.dataset.animating === '1') {
-    stopMonsterImgAnimation(imgEl);
-  }
+  stopMonsterImgAnimation(imgEl, false);
 }
 
 function resolveMonsterSad(b) {
