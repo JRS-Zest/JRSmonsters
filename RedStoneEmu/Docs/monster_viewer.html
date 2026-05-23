@@ -738,6 +738,8 @@ const DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS = 100;
 let monsterImgAnimIntervalMs = DEFAULT_MONSTER_IMG_ANIM_INTERVAL_MS;
 let activeMonsterImgTimer = null;
 let activeMonsterImgEl = null;
+const MONSTER_IMG_PREFETCH_AHEAD = 8;
+const monsterImgPrefetchCache = new Set();
 const EXCLUDED_MAP_NAME_KEYWORDS = ['ギルドホール'];
 
 function isMapExcludedByName(mapName) {
@@ -1090,20 +1092,34 @@ function applyMonsterImgVariant(imgEl, variantIndex) {
   if (tagEl) {
     tagEl.textContent = formatFrameTagText(pngName, idx, len);
   }
+
+  prefetchMonsterImgVariants(variantPngs, idx + 1, MONSTER_IMG_PREFETCH_AHEAD);
+}
+
+function prefetchMonsterImgVariants(variantPngs, startIndex, count) {
+  if (!variantPngs || variantPngs.length === 0 || count <= 0) return;
+
+  const len = variantPngs.length;
+  for (let i = 0; i < count; i++) {
+    const idx = ((startIndex + i) % len + len) % len;
+    const src = toFileUrl(`${DEFAULT_IMAGE_BASE}/${variantPngs[idx]}`);
+    if (!src || monsterImgPrefetchCache.has(src)) continue;
+
+    monsterImgPrefetchCache.add(src);
+    if (monsterImgPrefetchCache.size > 4096) {
+      monsterImgPrefetchCache.clear();
+      monsterImgPrefetchCache.add(src);
+    }
+
+    const preImg = new Image();
+    preImg.src = src;
+  }
 }
 
 function handleMonsterImgLoad(imgEl) {
   if (!imgEl) return;
   imgEl.dataset.failedVariantHops = '0';
   imgEl.dataset.missStreak = '0';
-
-  if (imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl) {
-    if (activeMonsterImgTimer && activeMonsterImgEl === imgEl) {
-      clearTimeout(activeMonsterImgTimer);
-      activeMonsterImgTimer = null;
-    }
-    scheduleMonsterImgAnimation(imgEl);
-  }
 }
 
 function setMonsterImgPlayTag(imgEl, state) {
@@ -1148,6 +1164,7 @@ function scheduleMonsterImgAnimation(imgEl) {
     if (imgEl.dataset.animating !== '1' || activeMonsterImgEl !== imgEl) return;
     const cur = parseInt(imgEl.dataset.variantIndex || '0', 10);
     applyMonsterImgVariant(imgEl, cur + 1);
+    scheduleMonsterImgAnimation(imgEl);
   }, monsterImgAnimIntervalMs);
 }
 
@@ -1189,6 +1206,7 @@ function startMonsterImgAnimation(imgEl) {
 
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
   applyMonsterImgVariant(imgEl, getPlayStartVariantIndex(variantPngs));
+  scheduleMonsterImgAnimation(imgEl);
 }
 
 function toggleMonsterImgAnimation(imgEl) {
