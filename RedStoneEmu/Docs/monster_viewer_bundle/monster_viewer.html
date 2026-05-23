@@ -192,6 +192,15 @@ html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Meiryo UI
   font-size: 11px;
 }
 .btn-play:hover { background: var(--card); border-color: var(--accent2); }
+.btn-pause {
+  background: #2a3a6a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  font-size: 11px;
+  margin-left: 4px;
+}
+.btn-pause:hover { background: var(--card); border-color: var(--accent2); }
 
 /* ══════════════════════════════════════════════════
    計算式ビュー（#main内）
@@ -1189,15 +1198,30 @@ function handleMonsterImgLoad(imgEl) {
   }
 }
 
-function setMonsterImgPlayTag(imgEl, isPlaying) {
+function setMonsterImgPlayTag(imgEl, state) {
   const wrap = imgEl ? imgEl.closest('.monster-img-wrap') : null;
   const playEl = wrap ? wrap.querySelector('.js-play-tag') : null;
   const playBtn = wrap ? wrap.querySelector('.js-play-btn') : null;
+  const pauseBtn = wrap ? wrap.querySelector('.js-pause-btn') : null;
+  const mode = state || 'stopped';
+
   if (playEl) {
-    playEl.textContent = isPlaying ? '再生中' : '停止中';
+    playEl.textContent = mode === 'playing' ? '再生中' : (mode === 'paused' ? '一時停止中' : '停止中');
   }
   if (playBtn) {
-    playBtn.textContent = isPlaying ? '停止' : '再生';
+    playBtn.textContent = mode === 'stopped' ? '再生' : '停止';
+  }
+  if (pauseBtn) {
+    if (mode === 'playing') {
+      pauseBtn.disabled = false;
+      pauseBtn.textContent = '一時停止';
+    } else if (mode === 'paused') {
+      pauseBtn.disabled = false;
+      pauseBtn.textContent = '再開';
+    } else {
+      pauseBtn.disabled = true;
+      pauseBtn.textContent = '一時停止';
+    }
   }
 }
 
@@ -1228,7 +1252,8 @@ function stopMonsterImgAnimation(imgEl = null, restorePose = true) {
 
   if (target) {
     target.dataset.animating = '0';
-    setMonsterImgPlayTag(target, false);
+    target.dataset.paused = '0';
+    setMonsterImgPlayTag(target, 'stopped');
   }
 
   if (!imgEl || target === activeMonsterImgEl) {
@@ -1251,7 +1276,8 @@ function startMonsterImgAnimation(imgEl) {
 
   activeMonsterImgEl = imgEl;
   imgEl.dataset.animating = '1';
-  setMonsterImgPlayTag(imgEl, true);
+  imgEl.dataset.paused = '0';
+  setMonsterImgPlayTag(imgEl, 'playing');
 
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
   applyMonsterImgVariant(imgEl, getPlayStartVariantIndex(variantPngs));
@@ -1268,6 +1294,49 @@ function toggleMonsterImgAnimation(imgEl) {
 }
 window.toggleMonsterImgAnimation = toggleMonsterImgAnimation;
 
+function pauseMonsterImgAnimation(imgEl) {
+  if (!imgEl) return;
+  const isPlaying = imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl;
+  if (!isPlaying) return;
+
+  if (activeMonsterImgTimer && activeMonsterImgEl === imgEl) {
+    clearTimeout(activeMonsterImgTimer);
+    activeMonsterImgTimer = null;
+  }
+  imgEl.dataset.animating = '0';
+  imgEl.dataset.paused = '1';
+  activeMonsterImgEl = null;
+  setMonsterImgPlayTag(imgEl, 'paused');
+}
+
+function resumeMonsterImgAnimation(imgEl) {
+  if (!imgEl || imgEl.dataset.paused !== '1') return;
+
+  if (activeMonsterImgEl && activeMonsterImgEl !== imgEl) {
+    stopMonsterImgAnimation(activeMonsterImgEl);
+  }
+
+  activeMonsterImgEl = imgEl;
+  imgEl.dataset.paused = '0';
+  imgEl.dataset.animating = '1';
+  setMonsterImgPlayTag(imgEl, 'playing');
+  scheduleMonsterImgAnimation(imgEl);
+}
+
+function toggleMonsterImgPause(imgEl) {
+  if (!imgEl) return;
+  const isPlaying = imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl;
+  const isPaused = imgEl.dataset.paused === '1';
+
+  if (isPlaying) {
+    pauseMonsterImgAnimation(imgEl);
+    return;
+  }
+  if (isPaused) {
+    resumeMonsterImgAnimation(imgEl);
+  }
+}
+
 function toggleMonsterImgAnimationByButton(btnEl) {
   const wrap = btnEl ? btnEl.closest('.monster-img-wrap') : null;
   const imgEl = wrap ? wrap.querySelector('.monster-img') : null;
@@ -1275,6 +1344,14 @@ function toggleMonsterImgAnimationByButton(btnEl) {
   toggleMonsterImgAnimation(imgEl);
 }
 window.toggleMonsterImgAnimationByButton = toggleMonsterImgAnimationByButton;
+
+function toggleMonsterImgPauseByButton(btnEl) {
+  const wrap = btnEl ? btnEl.closest('.monster-img-wrap') : null;
+  const imgEl = wrap ? wrap.querySelector('.monster-img') : null;
+  if (!imgEl) return;
+  toggleMonsterImgPause(imgEl);
+}
+window.toggleMonsterImgPauseByButton = toggleMonsterImgPauseByButton;
 
 function handleMonsterImgError(imgEl) {
   const variantPngs = (imgEl.dataset.variantPngs || '').split('|').filter(Boolean);
@@ -1289,7 +1366,7 @@ function handleMonsterImgError(imgEl) {
     if (imgEl.nextElementSibling) {
       imgEl.nextElementSibling.style.display = 'flex';
     }
-    setMonsterImgPlayTag(imgEl, false);
+    setMonsterImgPlayTag(imgEl, 'stopped');
     const wrap = imgEl.closest('.monster-img-wrap');
     const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
     if (tagEl) {
@@ -1358,12 +1435,12 @@ function buildMonsterImageBlock(b) {
       <img class="monster-img" src="${escHtml(src)}" alt="${escHtml(b.name)}" loading="lazy"
            title="再生はボタンで操作"
            data-variant-pngs="${escHtml(variantPngs.join('|'))}" data-variant-index="${initialVariantIndex}"
-           data-animating="0" data-miss-streak="0" data-failed-variant-hops="0"
+           data-animating="0" data-paused="0" data-miss-streak="0" data-failed-variant-hops="0"
             onload="handleMonsterImgLoad(this)"
            onerror="handleMonsterImgError(this)">
       <div class="monster-img-empty" style="display:none;">読込失敗</div>
     </div>
-    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><button class="btn btn-play js-play-btn" type="button" onclick="toggleMonsterImgAnimationByButton(this)">再生</button> <span class="js-play-tag">停止中</span><br><span class="js-speed-tag">再生速度: ${escHtml(playbackSpeedText)}</span><br>src: ${escHtml(src)}</div>
+    <div class="monster-img-meta"><b>${escHtml(b.name)}</b><br>mode: ${escHtml(info.mode)}<br>index: ${info.idx ?? '-'}<br>sad: ${escHtml(info.sad)}<br>png: ${escHtml(png)}<br><span class="js-frame-tag">${escHtml(initialFrameTag)}</span><br><button class="btn btn-play js-play-btn" type="button" onclick="toggleMonsterImgAnimationByButton(this)">再生</button><button class="btn btn-pause js-pause-btn" type="button" onclick="toggleMonsterImgPauseByButton(this)" disabled>一時停止</button> <span class="js-play-tag">停止中</span><br><span class="js-speed-tag">再生速度: ${escHtml(playbackSpeedText)}</span><br>src: ${escHtml(src)}</div>
   </div>`;
 }
 
