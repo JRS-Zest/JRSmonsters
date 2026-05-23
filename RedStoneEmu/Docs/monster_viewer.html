@@ -1190,10 +1190,18 @@ function handleMonsterImgError(imgEl) {
 
   const isAnimating = imgEl.dataset.animating === '1' && activeMonsterImgEl === imgEl;
   if (!isAnimating) {
+    const stopIdx = getStopVariantIndex(variantPngs);
+    imgEl.dataset.variantIndex = String(stopIdx);
     imgEl.dataset.missStreak = '0';
     imgEl.style.display = 'none';
     if (imgEl.nextElementSibling) {
       imgEl.nextElementSibling.style.display = 'flex';
+    }
+    setMonsterImgPlayTag(imgEl, false);
+    const wrap = imgEl.closest('.monster-img-wrap');
+    const tagEl = wrap ? wrap.querySelector('.js-frame-tag') : null;
+    if (tagEl) {
+      tagEl.textContent = formatFrameTagText(variantPngs[stopIdx], stopIdx, variantPngs.length);
     }
     return;
   }
