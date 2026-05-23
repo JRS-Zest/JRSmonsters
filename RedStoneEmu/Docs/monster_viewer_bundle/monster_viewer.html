@@ -1491,8 +1491,8 @@ function buildCard(b, lv, mapInfo, showAllMaps = false) {
     `<span class="abn-pill"><span class="ap-lbl">異常:</span><span class="ap-val ${b.all_abn>0?'abn-pos':b.all_abn<0?'abn-neg':''}">${b.all_abn>0?'+':''}${b.all_abn}</span></span>`,
     `<span class="abn-pill"><span class="ap-lbl">低下:</span><span class="ap-val ${b.all_dec>0?'abn-pos':b.all_dec<0?'abn-neg':''}">${b.all_dec>0?'+':''}${b.all_dec}</span></span>`,
     `<span class="abn-pill"><span class="ap-lbl">呪い:</span><span class="ap-val ${b.all_sp>0?'abn-pos':b.all_sp<0?'abn-neg':''}">${b.all_sp>0?'+':''}${b.all_sp}</span></span>`,
-    `<span class="abn-pill"><span class="ap-lbl">致命打:</span><span class="ap-val">${b.fatal}</span></span>`,
-    `<span class="abn-pill"><span class="ap-lbl">決定打:</span><span class="ap-val">${b.dec}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">致命打抵抗:</span><span class="ap-val">${b.fatal}</span></span>`,
+    `<span class="abn-pill"><span class="ap-lbl">決定打抵抗:</span><span class="ap-val">${b.dec}</span></span>`,
   ].join('');
 
   // ドロップアイテム
